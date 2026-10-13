@@ -5,7 +5,12 @@ so scenario shopping is priced into the null (each null replicate runs the same 
 import argparse
 import json
 import multiprocessing as mp
+import os
+import signal
+import subprocess
 import sys
+import threading
+import time
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -13,6 +18,62 @@ sys.path.insert(0,str(Path(__file__).resolve().parent))
 import analyze
 
 _D=_PROFILE=_FOCAL=None;_NULL='auto'
+
+
+try:
+    import psutil
+except ImportError:  # optional: sweeps still run, with POSIX fallbacks and no memory watchdog on Windows
+    psutil=None
+
+def total_ram_bytes():
+    if psutil:return int(psutil.virtual_memory().total)
+    try:return os.sysconf('SC_PAGE_SIZE')*os.sysconf('SC_PHYS_PAGES')
+    except (ValueError,OSError,AttributeError):return 8*2**30
+
+def available_ram_bytes():
+    if psutil:return int(psutil.virtual_memory().available)
+    return total_ram_bytes()//2
+
+def tree_rss_bytes(pid):
+    """Resident memory of this process and its children."""
+    if psutil:
+        try:
+            me=psutil.Process(pid);return sum(p.memory_info().rss for p in [me]+me.children(recursive=True))
+        except psutil.Error:return 0
+    try:out=subprocess.run(['ps','-A','-o','pid=,ppid=,rss='],capture_output=True,text=True,timeout=10).stdout
+    except Exception:return 0
+    return sum(int(r[2])*1024 for r in (l.split() for l in out.splitlines()) if len(r)==3 and pid in (int(r[0]),int(r[1])))
+
+def kill_children(pid):
+    """Kill only this sweep's own workers, never a process group (it may include the launching shell)."""
+    if psutil:
+        try:
+            for ch in psutil.Process(pid).children(recursive=True):
+                try:ch.kill()
+                except psutil.Error:pass
+        except psutil.Error:pass
+        return
+    try:
+        for line in subprocess.run(['ps','-A','-o','pid=,ppid='],capture_output=True,text=True,timeout=10).stdout.splitlines():
+            a_,b_=line.split()
+            if int(b_)==pid:os.kill(int(a_),signal.SIGKILL)
+    except Exception:pass
+
+def start_memory_watchdog(limit_bytes,out):
+    """Stop the whole sweep, cleanly and loudly, if its processes use more memory than the budget allows."""
+    if not psutil and os.name=='nt':return  # no ps on Windows: rely on the conservative worker sizing instead
+    pid=os.getpid()
+    def watch():
+        while True:
+            time.sleep(2)
+            used=tree_rss_bytes(pid)
+            if used>limit_bytes:
+                msg=f'memory watchdog: {used/2**30:.1f} GB in use exceeds the {limit_bytes/2**30:.1f} GB limit; stopping. Lower --workers, use --movers, narrow the grid, or crop the data.'
+                try:(Path(out)/'sweep_summary.json').write_text(json.dumps({'error':msg},indent=2),encoding='utf-8')
+                except OSError:pass
+                sys.stderr.write(msg+'\n');sys.stderr.flush()
+                kill_children(pid);os._exit(3)
+    threading.Thread(target=watch,daemon=True).start()
 
 def suggest_grid(d,profile,lags=(0,),models=('C','B')):
     """Scenario grid derived from the data's own error and cadence; the agent may override via --grid-json.
@@ -66,6 +127,11 @@ def make_null(d,rng,min_shift_s,method):
     if method=='auto':method='day_permute' if len(np.unique((d.seconds.values//86400).astype(int)))>=4 else 'time_shift'
     return day_permute_null(d,rng) if method=='day_permute' else shift_null(d,rng,min_shift_s)
 
+def _init_worker(state):
+    """Spawn-based platforms (Windows) do not inherit globals, so each worker receives the slimmed state once."""
+    global _D,_PROFILE,_GRID,_MODEL,_MIN_SHIFT,_FOCAL,_NULL
+    _D,_PROFILE,_GRID,_MODEL,_MIN_SHIFT,_FOCAL,_NULL=state
+
 def _job(args):
     """One null replicate (or the observed data when rep==0) over a set of scenarios that share window settings."""
     rep,idx,seed=args
@@ -90,7 +156,8 @@ def main():
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('datasets',nargs='+');ap.add_argument('--out',required=True)
     ap.add_argument('--replicates',type=int,default=20,help='null replicates; each re-runs the full grid')
-    ap.add_argument('--workers',type=int,default=max(1,(mp.cpu_count() or 2)-2))
+    ap.add_argument('--workers',type=int,default=None,help='default: as many as CPUs allow within the memory budget')
+    ap.add_argument('--max-memory-gb',type=float,default=None,help='memory budget for all sweep processes (default: 40%% of RAM, at most 24 GB); workers are reduced to fit and the sweep stops if it is exceeded')
     ap.add_argument('--grid-json',help='JSON list of scenarios {radius,sparse_s,gap_s,window_s,bias_floor,crowd_radius,model,lag_s}; default derived from data')
     ap.add_argument('--model',choices=['A','B','C'],default='C');ap.add_argument('--link-ids',action='store_true')
     ap.add_argument('--alpha',type=float,default=.05);ap.add_argument('--min-shift-days',type=float,default=7)
@@ -102,10 +169,22 @@ def main():
     a=ap.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
     for stale in ['sweep_pairs.csv','sweep_summary.json','sweep_grid.json','sweep_scenario_scores.csv']:(out/stale).unlink(missing_ok=True)
     _D,_PROFILE,rej=analyze.load(a.datasets,a.link_ids,a.assume_tz);_MODEL=a.model;_MIN_SHIFT=a.min_shift_days*86400;_NULL=a.null;_FOCAL=analyze.resolve_movers(_D,a.movers)
-    _GRID=json.loads(Path(a.grid_json).read_text()) if a.grid_json else suggest_grid(_D,_PROFILE,tuple(a.lags))
+    _GRID=json.loads(Path(a.grid_json).read_text(encoding='utf-8')) if a.grid_json else suggest_grid(_D,_PROFILE,tuple(a.lags))
+    # Keep only what the analysis needs: every worker holds copies of this frame.
+    _D=_D[['mover_id','source_id','seconds','x','y','sigma','longitude','latitude','region']].reset_index(drop=True)
+    budget=int((a.max_memory_gb*2**30) if a.max_memory_gb else min(0.4*total_ram_bytes(),0.7*available_ram_bytes(),24*2**30))
+    frame=int(_D.memory_usage(deep=True).sum());spawn=(os.environ.get('COTRAVELER_START_METHOD') or ('fork' if 'fork' in mp.get_all_start_methods() else 'spawn'))!='fork'
+    per_worker=int(1.0e9+(40 if spawn else 25)*frame)
+    fit=max(1,budget//per_worker);cpus=max(1,(mp.cpu_count() or 2)-2)
+    workers=min(a.workers or cpus,fit)
+    if a.workers and a.workers>fit:sys.stderr.write(f'--workers {a.workers} reduced to {fit} to stay within the {budget/2**30:.1f} GB memory budget (about {per_worker/2**30:.1f} GB per worker)\n')
+    start_memory_watchdog(int(budget*1.25),out)
     seeds=np.random.SeedSequence(a.seed).generate_state(a.replicates+1)
     jobs=[(r,idx,int(seeds[r])) for r in range(a.replicates+1) for idx in _groups()]
-    with mp.get_context('fork').Pool(a.workers) as pool:res=[x for chunk in pool.map(_job,jobs,chunksize=1) for x in chunk]
+    method=os.environ.get('COTRAVELER_START_METHOD') or ('fork' if 'fork' in mp.get_all_start_methods() else 'spawn')
+    ctx=mp.get_context(method);state=(_D,_PROFILE,_GRID,_MODEL,_MIN_SHIFT,_FOCAL,_NULL)
+    pool_kw=dict(initializer=_init_worker,initargs=(state,)) if method!='fork' else {}
+    with ctx.Pool(workers,maxtasksperchild=4,**pool_kw) as pool:res=[x for chunk in pool.map(_job,jobs,chunksize=1) for x in chunk]
     per={}
     for rep,i,p in res:
         if len(p):per.setdefault((rep,i),p.assign(scenario=i,rep=rep))
@@ -163,16 +242,16 @@ def main():
         res_df=res_df.merge(sup.reset_index(),on=['mover_a','mover_b'],how='left').merge(tight.reset_index(),on=['mover_a','mover_b'],how='left')
     if not len(res_df):res_df=pd.DataFrame(columns=['mover_a','mover_b','best_score','scenario_min_p','fwer_p','crowd_adjusted_fwer_p','significant','significant_any_model'])
     res_df.to_csv(out/'sweep_pairs.csv',index=False)
-    (out/'sweep_grid.json').write_text(json.dumps(_GRID,indent=1))
+    (out/'sweep_grid.json').write_text(json.dumps(_GRID,indent=1),encoding='utf-8')
     summary={'scenarios':len(_GRID),'replicates':a.replicates,'pairs_scored':int(len(res_df)),
              'null_pairs_pooled':int(len(null)),'null_score_p95':float(np.quantile(null,.95)) if len(null) else None,
-             'null':_NULL,'significant_pairs':int(res_df.significant.sum()) if len(res_df) else 0,
+             'null':_NULL,'workers':workers,'memory_budget_gb':round(budget/2**30,1),'significant_pairs':int(res_df.significant.sum()) if len(res_df) else 0,
              'significant_pairs_any_model':int(res_df.significant_any_model.sum()) if len(res_df) else 0,'alpha':a.alpha,
              'note':'scenario_min_p = smallest scenario-specific null p over the grid; fwer_p = (1+number of null replicates whose best pair statistic anywhere is at least as extreme)/(1+replicates), a family-wise p-value that prices in scenario selection and the number of pairs searched. `significant` uses only crowd-adjusted (model C) scenarios; `significant_any_model` adds the uncrowded model. Evidence of co-presence, not of interaction.'}
     summary['smallest_possible_p']=float(1/(1+R))
     if R+1<1/a.alpha:summary['warning']=f'{R} replicates cannot reach alpha={a.alpha}; use at least {int(np.ceil(1/a.alpha))}'
     if not summary['significant_pairs']:
         summary['advice']='No pair beat the null. Widen --grid-json (larger radius / sparse_s, smaller bias_floor), check error_radius_m semantics and timestamp offsets, or accept that the data cannot support a finding.'
-    (out/'sweep_summary.json').write_text(json.dumps(summary,indent=2));print(json.dumps(summary))
+    (out/'sweep_summary.json').write_text(json.dumps(summary,indent=2),encoding='utf-8');print(json.dumps(summary))
 
 if __name__=='__main__':main()

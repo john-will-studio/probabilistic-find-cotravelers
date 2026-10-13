@@ -51,6 +51,17 @@ Outputs `sweep_pairs.csv` (ranked pairs, best radius and lag, `min_radius_m_scor
 
 What it handles: sparse and bursty cadence (point-pair evidence), dense tracks (motion windows, with overtaking rejected), datasets spanning many regions, wide coastlines/corridors (tiled with overlap) or containing stray coordinates (partitioned, not aborted), the antimeridian, sub-second to nanosecond timestamp precision, focal searches in 100k+ mover populations. What it does not: calibrated interaction probabilities, elliptical or 3D errors, polar data, or relationships that leave no co-location signal.
 
+## Memory and Windows
+
+Designed to stay inside a 32 GB machine, Windows included (tested on macOS with the Windows-style `spawn` start method; the code uses no POSIX-only calls on the default path).
+
+- Install `requirements.txt` (it includes `psutil`, used for the memory watchdog and RAM detection on all platforms).
+- `sweep.py` picks its worker count from a memory budget (default: 40% of RAM, at most 24 GB, never more than 70% of what is currently free; on a 32 GB machine about 12.8 GB). Override with `--max-memory-gb` and `--workers`; requested workers are reduced to fit. A watchdog stops the sweep cleanly (exit code 3, reason in `sweep_summary.json`) if its processes exceed the budget by 25%, instead of letting the machine run out of memory.
+- Windows has no `fork`, so each worker gets its own copy of the slimmed data (only the columns used); the per-worker estimate accounts for that. Set `COTRAVELER_START_METHOD=spawn` to test this path elsewhere.
+- Sparse co-location matching works in time slices with a capped pair count and batched crowd counts, so dense data or generous tolerances cost time, not memory. Input files are read with only the needed columns and hashed in a stream.
+- Rough guide: 1M rows analyse in about 1 GB; a population sweep holds the data once per worker. For several million rows use `--movers` (focal mode), `--workers 2`, or crop the region or period first (`adapt.py --where`).
+- Run one heavy job at a time.
+
 ## Reproduce domain smoke tests
 
 ```bash

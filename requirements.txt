@@ -1,3 +1,4 @@
 numpy>=2.3.5
 pandas>=2.2.3
 scipy>=1.16
+psutil>=6.0

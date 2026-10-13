@@ -64,6 +64,6 @@ def main():
     stats.update({'input':str(a.input),'assumptions':{'error_radius_m':a.error_m,'error_col':a.error_col,'error_probability':a.error_prob,
                   'assume_tz':a.assume_tz,'note':'accuracy is a declared assumption, not a measurement' if a.error_m is not None else 'per-row accuracy from source'}})
     if first:sys.exit('no valid rows survived adaptation; nothing written')
-    tmp.replace(out);sidecar.write_text(json.dumps(stats,indent=2));print(json.dumps(stats))
+    tmp.replace(out);sidecar.write_text(json.dumps(stats,indent=2),encoding='utf-8');print(json.dumps(stats))
 
 if __name__=='__main__':main()

@@ -58,10 +58,19 @@ def region_summary(d):
                        'analyzable':True,'tiled':bool(max(span)>MAX_REGION_SPAN_DEG)}
     return out
 
+def file_sha256(path,block=1<<20):
+    """Streaming hash: never holds a whole input file in memory."""
+    h=hashlib.sha256()
+    with open(path,'rb') as f:
+        for chunk in iter(lambda:f.read(block),b''):h.update(chunk)
+    return h.hexdigest()
+
 def load(paths,link_ids=False,assume_tz=None):
     parts=[]; rejected=[]; sources=[]
     for path in paths:
-        raw=pd.read_csv(path,dtype={'mover_id':str},keep_default_na=False,na_values=[''])
+        header=pd.read_csv(path,nrows=0).columns
+        # Read only the columns the analysis uses: wide files (AIS, telemetry) otherwise multiply memory use.
+        raw=pd.read_csv(path,dtype={'mover_id':str},keep_default_na=False,na_values=[''],usecols=[c for c in header if c in REQUIRED])
         if set(REQUIRED)-set(raw):
             raise ValueError(f'{path}: missing {set(REQUIRED)-set(raw)}')
         name=Path(path).name if len({Path(x).name for x in paths})==len(paths) else str(Path(path).resolve())
@@ -88,7 +97,7 @@ def load(paths,link_ids=False,assume_tz=None):
         conflict=good.duplicated(['mover_id','time'],keep=False)
         rejected.append(good.loc[conflict].assign(reason='conflicting_same_time_observations'))
         good=good.loc[~conflict]
-        sources.append({'source_id':name,'sha256':hashlib.sha256(Path(path).read_bytes()).hexdigest(),
+        sources.append({'source_id':name,'sha256':file_sha256(path),
                         'rows_raw':len(raw),'rows_valid':len(good),'exact_duplicates_removed':duplicate_count,'naive_timestamp_rows':naive_rows,'assume_tz':assume_tz,
                         'missingness':{c:int(raw[c].isna().sum()) for c in REQUIRED},
                         'utc_hour_counts':{str(k):int(v) for k,v in good.time.dt.hour.value_counts().sort_index().items()},
@@ -243,12 +252,18 @@ def encounter_windows(w,model='C',radius=100,crowd_radius=400,movers=None,window
                 'n_a':int(NN[ia]),'n_b':int(NN[ib]),'source_a':SRC[ia],'source_b':SRC[ib]})
     return results
 
+SPARSE_CHUNK_PAIRS=1_500_000   # target candidate pairs held at once (about 150 MB of working arrays)
+SPARSE_MAX_SURVIVORS=1_000_000 # per-slice cap on pairs that go on to the (costly) crowd count
+SPARSE_CROWD_BATCH=4000
+
 def sparse_encounters(d,radius=100,dt_max=60,crowd_radius=400,bias_floor=30,movers=None,known=frozenset(),window_s=900):
     """Point-pair co-location evidence for sparse or bursty cadence where no 15-minute window
     has enough fixes to infer motion. Each match is two fixes from different movers within dt_max
     seconds whose positions are consistent with `radius` given both error models; crowd discounts
     places where many unrelated movers also appear. `known` holds (mover,block) pairs already covered by a
-    motion-state window; matches between two covered movers are left to the window model. Rows use the encounter_windows schema."""
+    motion-state window; matches between two covered movers are left to the window model. Rows use the encounter_windows schema.
+    Memory is bounded: the data are processed in time slices whose candidate-pair count is capped, and crowd counts run
+    in small batches, so dense data or generous tolerances cost time, never unbounded memory."""
     if len(d)<2:return []
     c=radius/dt_max
     sig_all=np.sqrt(d.sigma.values**2+bias_floor**2)
@@ -256,55 +271,73 @@ def sparse_encounters(d,radius=100,dt_max=60,crowd_radius=400,bias_floor=30,move
     # uncertain fix from inflating the search radius for everyone.
     elig=np.flatnonzero(sig_all<=5.7*radius)
     if len(elig)<2:return []
-    d=d.iloc[elig];sig=sig_all[elig]
-    pts=np.c_[d.x.values,d.y.values,d.seconds.values*c]
-    ids=d.mover_id.to_numpy(dtype=object);tsec=d.seconds.values;tree=cKDTree(pts)
-    codes,_uniq=pd.factorize(ids)
-    # Fixes already inside a motion-state window are the window model's business; drop such pairs before enumeration.
-    cov=pd.MultiIndex.from_arrays([ids,(tsec//window_s).astype(int)]).isin(known) if known else np.zeros(len(ids),bool)
-    reach=radius*1.5+5.3*float(sig.max())
-    if movers:
-        # Focal-first: only neighbours of the known movers are enumerated, in bounded batches, never the full population.
-        fidx=np.flatnonzero(np.isin(ids,list(movers)));isfocal=np.isin(ids,list(movers));aa=[];bb=[]
-        for k in range(0,len(fidx),2000):
-            batch=fidx[k:k+2000]
-            for i,js in zip(batch,tree.query_ball_point(pts[batch],reach)):
-                js=np.asarray(js,dtype=int)
-                if not len(js):continue
-                m=(ids[js]!=ids[i])&(np.abs(tsec[js]-tsec[i])<=dt_max)&~(isfocal[js]&(js<i))&~(cov[js]&cov[i])
-                if m.any():aa.append(np.full(int(m.sum()),i));bb.append(js[m])
-        if not aa:return []
-        a=np.concatenate(aa);b=np.concatenate(bb)
-    else:
-        pairs=tree.query_pairs(reach,output_type='ndarray')
-        if not len(pairs):return []
-        a,b=pairs[:,0],pairs[:,1]
-        keep=(ids[a]!=ids[b])&(np.abs(tsec[a]-tsec[b])<=dt_max)&~(cov[a]&cov[b]);a,b=a[keep],b[keep]
-    if not len(a):return []
-    var=sig[a]**2+sig[b]**2;dist2=(d.x.values[a]-d.x.values[b])**2+(d.y.values[a]-d.y.values[b])**2
-    p=ncx2.cdf(radius*radius/var,2,dist2/var);ok=p>=.015
-    a,b,p=a[ok],b[ok],p[ok]
-    if not len(a):return []
-    t=d.seconds.values;x=d.x.values;y=d.y.values;src=d.source_id.to_numpy(dtype=object)
-    sw=ids[a]>ids[b];a,b=np.where(sw,b,a),np.where(sw,a,b)  # order each pair by mover id
-    blk=(((t[a]+t[b])/2)//window_s).astype(np.int64)
-    if known:
-        both=pd.MultiIndex.from_arrays([ids[a],blk]).isin(known)&pd.MultiIndex.from_arrays([ids[b],blk]).isin(known)
-        a,b,p,blk=a[~both],b[~both],p[~both],blk[~both]
-        if not len(a):return []
+    d=d.iloc[elig];order=np.argsort(d.seconds.values,kind='stable');d=d.iloc[order];sig=sig_all[elig][order]
+    t=d.seconds.values;x=d.x.values;y=d.y.values;ids=d.mover_id.to_numpy(dtype=object);src=d.source_id.to_numpy(dtype=object)
+    codes,_=pd.factorize(ids);n=len(t);pts=np.c_[x,y,t*c]
+    cov=pd.MultiIndex.from_arrays([ids,(t//window_s).astype(np.int64)]).isin(known) if known else np.zeros(n,bool)
+    isfocal=np.isin(ids,list(movers)) if movers else None
+    reach=radius*1.5+5.3*float(sig.max());margin=max(dt_max,crowd_radius/c)
+    # Candidate-pair density from a sample inside a contiguous middle slice, to size the time slices.
+    mid_lo=max(0,n//2-250_000);sub=cKDTree(pts[mid_lo:mid_lo+500_000])
+    sample=np.random.default_rng(0).choice(len(sub.data),size=min(len(sub.data),2000),replace=False)
+    deg=float(np.mean(sub.query_ball_point(sub.data[sample],reach,return_length=True)));del sub
+    chunk=int(np.clip(SPARSE_CHUNK_PAIRS*2/max(deg,1.),2000,n))
+    keep_a=[];keep_b=[];keep_blk=[];keep_q=[];keep_p=[];keep_crowd=[];keep_mid=[]
+    for i0 in range(0,n,chunk):
+        i1=min(n,i0+chunk);lo=int(np.searchsorted(t,t[i0]-margin,'left'));hi=int(np.searchsorted(t,t[i1-1]+margin,'right'))
+        tree=cKDTree(pts[lo:hi])
+        if movers:
+            fidx=np.flatnonzero(isfocal[i0:i1])+i0;aa=[];bb=[]
+            for k in range(0,len(fidx),2000):
+                batch=fidx[k:k+2000]
+                for i,js in zip(batch,tree.query_ball_point(pts[batch],reach)):
+                    js=np.asarray(js,dtype=np.int64)+lo
+                    m=(ids[js]!=ids[i])&(np.abs(t[js]-t[i])<=dt_max)&~(isfocal[js]&(js<i))&~(cov[js]&cov[i])
+                    if m.any():aa.append(np.full(int(m.sum()),i));bb.append(js[m])
+            if not aa:continue
+            a=np.concatenate(aa);b=np.concatenate(bb)
+        else:
+            pr=tree.query_pairs(reach,output_type='ndarray')
+            if not len(pr):continue
+            a=pr[:,0]+lo;b=pr[:,1]+lo;core=(a>=i0)&(a<i1);a,b=a[core],b[core]   # earlier point decides ownership
+            m=(ids[a]!=ids[b])&(np.abs(t[a]-t[b])<=dt_max)&~(cov[a]&cov[b]);a,b=a[m],b[m]
+        if not len(a):continue
+        var=sig[a]**2+sig[b]**2;dist2=(x[a]-x[b])**2+(y[a]-y[b])**2
+        pn=ncx2.cdf(radius*radius/var,2,dist2/var);ok=pn>=.015;a,b,pn=a[ok],b[ok],pn[ok]
+        if not len(a):continue
+        sw=ids[a]>ids[b];a,b=np.where(sw,b,a),np.where(sw,a,b)   # order each pair by mover id
+        blk=(((t[a]+t[b])/2)//window_s).astype(np.int64)
+        if known:
+            both=pd.MultiIndex.from_arrays([ids[a],blk]).isin(known)&pd.MultiIndex.from_arrays([ids[b],blk]).isin(known)
+            a,b,pn,blk=a[~both],b[~both],pn[~both],blk[~both]
+            if not len(a):continue
+        ca,cb=codes[a],codes[b]
+        if len(a)>SPARSE_MAX_SURVIVORS:
+            # Pathologically dense slice: keep the three most probable matches per pair and window (approximation).
+            o=np.lexsort((-pn,blk,cb,ca));a,b,pn,blk,ca,cb=a[o],b[o],pn[o],blk[o],ca[o],cb[o]
+            nk=np.ones(len(a),bool);nk[1:]=(ca[1:]!=ca[:-1])|(cb[1:]!=cb[:-1])|(blk[1:]!=blk[:-1])
+            rk=np.arange(len(a))-np.maximum.accumulate(np.where(nk,np.arange(len(a)),0));sel=rk<3
+            a,b,pn,blk,ca,cb=a[sel],b[sel],pn[sel],blk[sel],ca[sel],cb[sel]
+        mid=np.c_[(x[a]+x[b])/2,(y[a]+y[b])/2,(t[a]+t[b])/2*c]
+        crowd=np.empty(len(a),dtype=np.int64);lc=codes[lo:hi]
+        for k in range(0,len(a),SPARSE_CROWD_BATCH):
+            sl=slice(k,k+SPARSE_CROWD_BATCH)
+            for j,(nb,u,v) in enumerate(zip(tree.query_ball_point(mid[sl],crowd_radius),ca[sl],cb[sl])):
+                un=np.unique(lc[nb]);crowd[k+j]=un.size-int((un==u).any())-int((un==v).any())
+        q=pn/(1+crowd)
+        o=np.lexsort((-q,blk,cb,ca));a,b,pn,blk,ca,cb,q,crowd,mid=(v[o] for v in (a,b,pn,blk,ca,cb,q,crowd,mid))
+        first=np.ones(len(a),bool);first[1:]=(ca[1:]!=ca[:-1])|(cb[1:]!=cb[:-1])|(blk[1:]!=blk[:-1])
+        for lst,arr in zip((keep_a,keep_b,keep_blk,keep_q,keep_p,keep_crowd,keep_mid),(a,b,blk,q,pn,crowd,mid)):lst.append(arr[first])
+    if not keep_a:return []
+    a,b,blk,q,pn,crowd,mid=(np.concatenate(v) for v in (keep_a,keep_b,keep_blk,keep_q,keep_p,keep_crowd,keep_mid))
     ca,cb=codes[a],codes[b]
-    mid=np.c_[(x[a]+x[b])/2,(y[a]+y[b])/2,(t[a]+t[b])/2*c]
-    near=tree.query_ball_point(mid,crowd_radius)
-    crowd=np.array([np.setdiff1d(np.unique(codes[nb]),[u,v]).size for nb,u,v in zip(near,ca,cb)])
-    q=p/(1+crowd)
-    order=np.lexsort((-q,blk,cb,ca));a,b,p,blk,ca,cb,q,crowd,mid=(v[order] for v in (a,b,p,blk,ca,cb,q,crowd,mid))
+    o=np.lexsort((-q,blk,cb,ca));a,b,blk,q,pn,crowd,mid,ca,cb=(v[o] for v in (a,b,blk,q,pn,crowd,mid,ca,cb))
     first=np.ones(len(a),bool);first[1:]=(ca[1:]!=ca[:-1])|(cb[1:]!=cb[:-1])|(blk[1:]!=blk[:-1])
-    a,b,p,blk,q,crowd,mid=a[first],b[first],p[first],blk[first],q[first],crowd[first],mid[first]
     return [{'mover_a':ids[i],'mover_b':ids[j],'block':int(bk),'event_type':'sparse_colocation',
              'start':float(min(t[i],t[j])),'end':float(max(t[i],t[j])),'q':float(qq),'p_near':float(pp),'crowd':int(cr),
              'x':float(m[0]),'y':float(m[1]),'sigma':float(np.hypot(sig[i],sig[j])),'n_a':1,'n_b':1,
              'source_a':src[i],'source_b':src[j]}
-            for i,j,bk,qq,pp,cr,m in zip(a,b,blk,q,p,crowd,mid)]
+            for i,j,bk,qq,pp,cr,m in zip(a[first],b[first],blk[first],q[first],pn[first],crowd[first],mid[first])]
 
 def events(rows,origin,model):
     if not rows:return pd.DataFrame()
@@ -459,18 +492,18 @@ def run(paths,out,model='C',movers=None,link_ids=False,radius=100,bias_floor=30,
         pd.DataFrame(columns=['mover_a','mover_b','event_type','confidence_score','longitude','latitude','mgrs']).to_csv(out/'matches.csv',index=False)
         pd.DataFrame(columns=['mover_a','mover_b','event_type']).to_csv(out/'review_candidates.csv',index=False)
     pairs.to_csv(out/'pair_scores.csv',index=False);rejected.to_csv(out/'quarantine.csv',index=False)
-    (out/'profile.json').write_text(json.dumps(profile,indent=2))
+    (out/'profile.json').write_text(json.dumps(profile,indent=2),encoding='utf-8')
     w.to_csv(out/'motion_windows.csv',index=False)
     manifest={'model':model,'radius_m':radius,'bias_floor_m':bias_floor,'crowd_radius_m':crowd_radius,
               'max_gap_s':gap_s,'sparse_seconds':sparse_s,'window_s':window_s,'lag_s':lag_s,'assume_tz':assume_tz,'version':VERSION,'sources':profile['sources'],
               'selected_movers':sorted(movers) if movers else None,'linked_ids':link_ids,'python':sys.version.split()[0],
               'numpy':np.__version__,'pandas':pd.__version__,'confidence':'heuristic; uncalibrated',
               'scipy':scipy.__version__,
-              'code_hashes':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
+              'code_hashes':{name:file_sha256(Path(__file__).with_name(name))
                              for name in ['analyze.py','grid.py']},
               'acceptance':{'minimum_days':2,'minimum_score':70,'minimum_typical_episode_quality':.4},
               'scope':'Local, isotropic Gaussian baseline; no relationship probability'}
-    (out/'manifest.json').write_text(json.dumps(manifest,indent=2))
+    (out/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
     return e,pairs,w,profile
 
 if __name__=='__main__':

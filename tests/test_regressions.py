@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 ROOT=Path(__file__).resolve().parents[1]
-sys.path.insert(0,str(ROOT/'skills/score-mover-associations/scripts'))
+sys.path.insert(0,str(ROOT/'skills/score-mover-associations/scripts'));sys.path.insert(0,str(ROOT/'tests'))
 import analyze
 
 M_PER_DEG=111320.
@@ -171,6 +171,41 @@ def test_single_day_acceptance_rule_and_dwell_flag():
     assert bool(analyze.pair_scores(ev,min_days=1).accepted.iloc[0]) and not bool(analyze.pair_scores(ev,min_days=2).accepted.iloc[0])
     assert not analyze.pair_scores(ev,min_days=1).dwell_only.iloc[0]
     d,_,_=analyze.load([_csv(world(days=1))]);e,p,_=run(world(days=1));assert 'dwell_only' in p.columns and int(p.days.max())==1
+
+def test_sparse_slicing_matches_unsliced_result():
+    # Memory-bounded time slices must not change the answer: force many tiny slices and compare to one big slice.
+    import commuter_fixture
+    f=Path(tempfile.mkdtemp())/'c.csv';commuter_fixture.make(seed=2,n=24,days=2,cad=120,nhome=10,nwork=3,companions=2,out=str(f))
+    d,prof,_=analyze.load([f]);res={}
+    for cap in (50_000_000,40_000):
+        analyze.SPARSE_CHUNK_PAIRS=cap
+        for focal in (None,{'M0','M1'}):
+            _,p,_=analyze.analyze_data(d,prof,'C',focal,radius=200,sparse_s=240)
+            res[(cap,bool(focal))]=p.set_index(['mover_a','mover_b']).confidence_score
+    analyze.SPARSE_CHUNK_PAIRS=1_500_000
+    for focal in (False,True):
+        a,b=res[(50_000_000,focal)],res[(40_000,focal)]
+        assert len(a)==len(b) and (a.sort_index()-b.sort_index()).abs().max()<1e-9,(focal,len(a),len(b))
+
+def test_sweep_works_with_spawn_start_method():
+    # Windows has no fork: workers must receive their data explicitly and give the same answer.
+    import subprocess,os
+    out=Path(tempfile.mkdtemp());env=dict(os.environ,COTRAVELER_START_METHOD='spawn')
+    r=subprocess.run([sys.executable,str(ROOT/'skills/score-mover-associations/scripts/sweep.py'),str(_csv(world(days=8,n_bg=25))),'--out',str(out),
+                      '--movers','focal','--workers','2'],capture_output=True,text=True,env=env);assert r.returncode==0,r.stderr[-500:]
+    p=pd.read_csv(out/'sweep_pairs.csv');assert {p.iloc[0].mover_a,p.iloc[0].mover_b}=={'focal','companion'} and bool(p.iloc[0].significant)
+
+def test_memory_watchdog_stops_sweep_cleanly():
+    import subprocess,json
+    out=Path(tempfile.mkdtemp())
+    r=subprocess.run([sys.executable,str(ROOT/'skills/score-mover-associations/scripts/sweep.py'),str(_csv(world(days=8,n_bg=25))),'--out',str(out),
+                      '--workers','2','--max-memory-gb','0.05'],capture_output=True,text=True)
+    assert r.returncode==3 and 'memory watchdog' in r.stderr,(r.returncode,r.stderr[-300:])
+    assert 'memory watchdog' in json.loads((out/'sweep_summary.json').read_text(encoding='utf-8'))['error']
+
+def test_wide_files_read_only_needed_columns():
+    df=world(days=1);df['junk1']='x'*40;df['junk2']=1.5;d,_,_=analyze.load([_csv(df)])
+    assert 'junk1' not in d.columns and len(d)>0
 
 if __name__=='__main__':
     failed=0
