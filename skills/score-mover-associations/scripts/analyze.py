@@ -317,7 +317,7 @@ def events(rows,origin,model):
           'limitations':'Sampled window evidence; continuous occupation and interaction unconfirmed'})
     return pd.DataFrame(out)
 
-def pair_scores(e):
+def pair_scores(e,min_days=2):
     out=[]
     if e.empty:return pd.DataFrame(columns=['mover_a','mover_b','confidence_score','accepted'])
     for (a,b),h in e.groupby(['mover_a','mover_b'],sort=True):
@@ -331,7 +331,8 @@ def pair_scores(e):
                     'days':days,'typical_episode_quality':round(typicalq,4),
                     'co_travel_episodes':int((h.event_type=='co_travel').sum()),'co_dwell_episodes':int((h.event_type=='co_dwell').sum()),
                     'proximity_episodes':int((h.event_type=='proximity').sum()),'sparse_episodes':int((h.event_type=='sparse_colocation').sum()),
-                    'accepted':bool(days>=2 and score>=70 and typicalq>=.4),
+                    'dwell_only':bool((h.event_type=='co_dwell').all()),
+                    'accepted':bool(days>=min_days and score>=70 and typicalq>=.4),
                     'confidence_kind':'heuristic_evidence','calibration_status':'uncalibrated'})
     return pd.DataFrame(out).sort_values(['confidence_score','mover_a','mover_b'],ascending=[False,True,True])
 
@@ -379,7 +380,7 @@ def merge_tile_duplicates(e):
         else:keep.append(True);last[key]=(s0,e0,m,len(keep)-1)
     return e.loc[np.array(keep)].drop(columns=['_s','_e']).sort_index().reset_index(drop=True)
 
-def analyze_data(d,profile,model='C',movers=None,radius=100,bias_floor=30,crowd_radius=400,gap_s=600,sparse_s=60,window_s=900,lag_s=0,cache=None):
+def analyze_data(d,profile,model='C',movers=None,radius=100,bias_floor=30,crowd_radius=400,gap_s=600,sparse_s=60,window_s=900,lag_s=0,cache=None,min_days=None):
     """Score pairs on already-loaded data; reusable by parameter sweeps and null controls.
     `cache` (a dict) lets scenarios that share window settings reuse the expensive motion fits."""
     ws=[];es=[]
@@ -411,7 +412,9 @@ def analyze_data(d,profile,model='C',movers=None,radius=100,bias_floor=30,crowd_
     w=pd.concat(ws,ignore_index=True) if ws else pd.DataFrame()
     e=pd.concat(es,ignore_index=True) if es else pd.DataFrame()
     if len(e) and any(r.get('tiled') for r in profile['regions'].values()):e=merge_tile_duplicates(e)
-    return e,pair_scores(e),w
+    if min_days is None:  # a record that spans one UTC day can never show two days; do not make acceptance impossible
+        min_days=max(1,min(2,int(d.seconds.floordiv(86400).nunique())))
+    return e,pair_scores(e,min_days),w
 
 def run(paths,out,model='C',movers=None,link_ids=False,radius=100,bias_floor=30,crowd_radius=400,gap_s=600,sparse_s=60,
         window_s=900,lag_s=0,assume_tz=None):

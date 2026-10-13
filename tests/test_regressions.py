@@ -165,6 +165,13 @@ def test_date_only_timestamps_are_not_utc_midnight():
     try:run(df);assert False,'date-only timestamps should be quarantined'
     except ValueError:pass
 
+def test_single_day_acceptance_rule_and_dwell_flag():
+    # Direct rule check: strong multi-type evidence on one day passes only when one day is allowed.
+    ev=pd.DataFrame([{'mover_a':'a','mover_b':'b','event_type':k,'start_utc':'2026-03-10T08:00:00+00:00','quality':.9} for k in ('co_travel','co_dwell','sparse_colocation')])
+    assert bool(analyze.pair_scores(ev,min_days=1).accepted.iloc[0]) and not bool(analyze.pair_scores(ev,min_days=2).accepted.iloc[0])
+    assert not analyze.pair_scores(ev,min_days=1).dwell_only.iloc[0]
+    d,_,_=analyze.load([_csv(world(days=1))]);e,p,_=run(world(days=1));assert 'dwell_only' in p.columns and int(p.days.max())==1
+
 if __name__=='__main__':
     failed=0
     for name,fn in sorted(globals().items()):
