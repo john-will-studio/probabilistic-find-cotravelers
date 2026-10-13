@@ -69,7 +69,7 @@ def load(paths,link_ids=False,assume_tz=None):
         raw['original_mover_id']=raw.mover_id
         raw['mover_id']=name+'::'+raw.mover_id if len(paths)>1 and not link_ids else raw.mover_id
         ts=raw.timestamp.astype(str)
-        offset=ts.str.contains(r'(?:Z|[+-]\d\d(?::?\d\d)?)$',regex=True)
+        offset=ts.str.contains(r'\d\d:\d\d(?::\d\d(?:\.\d+)?)?\s*(?:Z|[+-]\d\d(?::?\d\d)?)$',regex=True)  # a time of day AND an offset; bare dates never qualify
         raw['time']=pd.to_datetime(ts.where(offset),utc=True,errors='coerce',format='mixed')
         naive_rows=int((~offset).sum())
         if assume_tz:
@@ -203,7 +203,7 @@ def encounter_windows(w,model='C',radius=100,crowd_radius=400,movers=None,window
                     tau=t-center;vt=var+(VS[ia]**2+VS[ib]**2)*tau*tau
                     sep2=(d0x+dvx*tau)**2+(d0y+dvy*tau)**2
                     # Only a separation clearly beyond the radius (given its uncertainty) counts against the pair.
-                    if sep2>(radius+3*np.sqrt(vt))**2:pn=min(pn,float(ncx2.cdf(radius*radius/vt,2,sep2/vt)))
+                    if sep2>(radius+2*np.sqrt(vt))**2:pn=min(pn,float(ncx2.cdf(radius*radius/vt,2,sep2/vt)))
             if pn<.015:continue
             kind='proximity' if model=='A' else 'indeterminate'
             if model!='A':
@@ -232,17 +232,35 @@ def sparse_encounters(d,radius=100,dt_max=60,crowd_radius=400,bias_floor=30,move
     motion-state window; matches between two covered movers are left to the window model. Rows use the encounter_windows schema."""
     if len(d)<2:return []
     c=radius/dt_max
+    sig_all=np.sqrt(d.sigma.values**2+bias_floor**2)
+    # A fix whose combined sigma exceeds ~5.7x the radius can never reach p>=.015; excluding it keeps one wildly
+    # uncertain fix from inflating the search radius for everyone.
+    elig=np.flatnonzero(sig_all<=5.7*radius)
+    if len(elig)<2:return []
+    d=d.iloc[elig];sig=sig_all[elig]
     pts=np.c_[d.x.values,d.y.values,d.seconds.values*c]
-    ids=d.mover_id.values;tree=cKDTree(pts)
-    pairs=tree.query_pairs(radius*1.5+5.3*float(np.hypot(d.sigma.max(),bias_floor)),output_type='ndarray')
-    if not len(pairs):return []
-    a,b=pairs[:,0],pairs[:,1]
-    keep=(ids[a]!=ids[b])&(np.abs(d.seconds.values[a]-d.seconds.values[b])<=dt_max)
+    ids=d.mover_id.values;tsec=d.seconds.values;tree=cKDTree(pts)
+    # Fixes already inside a motion-state window are the window model's business; drop such pairs before enumeration.
+    cov=pd.MultiIndex.from_arrays([ids,(tsec//window_s).astype(int)]).isin(known) if known else np.zeros(len(ids),bool)
+    reach=radius*1.5+5.3*float(sig.max())
     if movers:
-        sel=np.isin(ids,list(movers));keep&=sel[a]|sel[b]
-    a,b=a[keep],b[keep]
+        # Focal-first: only neighbours of the known movers are enumerated, in bounded batches, never the full population.
+        fidx=np.flatnonzero(np.isin(ids,list(movers)));isfocal=np.isin(ids,list(movers));aa=[];bb=[]
+        for k in range(0,len(fidx),2000):
+            batch=fidx[k:k+2000]
+            for i,js in zip(batch,tree.query_ball_point(pts[batch],reach)):
+                js=np.asarray(js,dtype=int)
+                if not len(js):continue
+                m=(ids[js]!=ids[i])&(np.abs(tsec[js]-tsec[i])<=dt_max)&~(isfocal[js]&(js<i))&~(cov[js]&cov[i])
+                if m.any():aa.append(np.full(int(m.sum()),i));bb.append(js[m])
+        if not aa:return []
+        a=np.concatenate(aa);b=np.concatenate(bb)
+    else:
+        pairs=tree.query_pairs(reach,output_type='ndarray')
+        if not len(pairs):return []
+        a,b=pairs[:,0],pairs[:,1]
+        keep=(ids[a]!=ids[b])&(np.abs(tsec[a]-tsec[b])<=dt_max)&~(cov[a]&cov[b]);a,b=a[keep],b[keep]
     if not len(a):return []
-    sig=np.sqrt(d.sigma.values**2+bias_floor**2)
     var=sig[a]**2+sig[b]**2;dist2=(d.x.values[a]-d.x.values[b])**2+(d.y.values[a]-d.y.values[b])**2
     p=ncx2.cdf(radius*radius/var,2,dist2/var);ok=p>=.015
     a,b,p=a[ok],b[ok],p[ok]
@@ -348,6 +366,19 @@ def resolve_movers(d,movers):
     if missing:raise ValueError(f'focal movers not found in data: {missing}')
     return out
 
+def merge_tile_duplicates(e):
+    """Tiles overlap by a margin, so one encounter can be reported by two tiles with slightly different bounds.
+    Within a pair and event type, an event that overlaps one already kept is the same encounter: keep the longer."""
+    e=e.assign(_s=pd.to_datetime(e.start_utc,format='ISO8601',utc=True),_e=pd.to_datetime(e.end_utc,format='ISO8601',utc=True)).sort_values(['mover_a','mover_b','event_type','_s','_e'])
+    keep=[];last={}
+    for i,(a,b,k,s0,e0,m) in enumerate(zip(e.mover_a,e.mover_b,e.event_type,e._s,e._e,e.supported_minutes)):
+        key=(a,b,k);prev=last.get(key)
+        if prev is not None and s0<=prev[1]:
+            if m>prev[2]:keep[prev[3]]=False;keep.append(True);last[key]=(prev[0],max(prev[1],e0),m,len(keep)-1)
+            else:keep.append(False);last[key]=(prev[0],max(prev[1],e0),prev[2],prev[3])
+        else:keep.append(True);last[key]=(s0,e0,m,len(keep)-1)
+    return e.loc[np.array(keep)].drop(columns=['_s','_e']).sort_index().reset_index(drop=True)
+
 def analyze_data(d,profile,model='C',movers=None,radius=100,bias_floor=30,crowd_radius=400,gap_s=600,sparse_s=60,window_s=900,lag_s=0,cache=None):
     """Score pairs on already-loaded data; reusable by parameter sweeps and null controls.
     `cache` (a dict) lets scenarios that share window settings reuse the expensive motion fits."""
@@ -379,7 +410,7 @@ def analyze_data(d,profile,model='C',movers=None,radius=100,bias_floor=30,crowd_
         else:one(g,rid,origin,None)
     w=pd.concat(ws,ignore_index=True) if ws else pd.DataFrame()
     e=pd.concat(es,ignore_index=True) if es else pd.DataFrame()
-    if len(e):e=e.drop_duplicates(['mover_a','mover_b','event_type','start_utc','end_utc']).reset_index(drop=True)  # tile overlaps
+    if len(e) and any(r.get('tiled') for r in profile['regions'].values()):e=merge_tile_duplicates(e)
     return e,pair_scores(e),w
 
 def run(paths,out,model='C',movers=None,link_ids=False,radius=100,bias_floor=30,crowd_radius=400,gap_s=600,sparse_s=60,

@@ -118,6 +118,7 @@ def test_sweep_null_runs():
     df=world(days=6,n_bg=25);d,prof,_=analyze.load([_csv(df)])
     grid=sweep.suggest_grid(d,prof);assert grid and all('radius' in g for g in grid)
     s=sweep.shift_null(d,np.random.default_rng(0),86400);assert len(s)==len(d)
+    q=sweep.day_permute_null(d,np.random.default_rng(0));assert len(q)==len(d) and (q.seconds.sort_values().values==d.seconds.sort_values().values).all()  # schedule preserved
 
 def test_wide_extent_is_tiled_not_skipped():
     # A convoy sailing ~3 degrees east is one connected region far wider than a local tangent plane.
@@ -147,6 +148,22 @@ def test_adapter_maps_columns_and_requires_tz():
     r=subprocess.run(base+['--out',str(f.parent/'o.csv')],capture_output=True,text=True);assert r.returncode!=0 and 'assume-tz' in (r.stderr+r.stdout)
     r=subprocess.run(base+['--assume-tz','UTC','--out',str(f.parent/'o.csv')],capture_output=True,text=True);assert r.returncode==0,r.stderr
     o=pd.read_csv(f.parent/'o.csv');assert list(o.columns)==analyze.REQUIRED and len(o)==3 and o.timestamp.str.endswith('Z').all()
+
+def test_adapter_mixed_offsets_nanoseconds_and_atomicity():
+    import subprocess
+    d=Path(tempfile.mkdtemp());raw=pd.DataFrame({'id':['a','a','b','b'],'ts':['2026-01-01T00:00:00.000000001Z','2026-01-01T00:00:00.000000002Z','2026-01-01 01:00:00','2026-01-01T02:00:00+02:00'],
+        'x':[10.]*4,'y':[5.]*4});f=d/'raw.csv';raw.to_csv(f,index=False)
+    base=[sys.executable,str(ROOT/'skills/score-mover-associations/scripts/adapt.py'),str(f),'--id','id','--time','ts','--lon','x','--lat','y','--error-m','20','--assume-tz','UTC','--chunk','1','--out',str(d/'o.csv')]
+    r=subprocess.run(base,capture_output=True,text=True);assert r.returncode==0,r.stderr[-400:]
+    o=pd.read_csv(d/'o.csv');assert len(o)==4 and o.timestamp.nunique()==4,o  # nanosecond fixes stay distinct
+    assert o.timestamp.str.endswith('Z').all()
+    r=subprocess.run(base[:-4]+['--error-prob','2','--out',str(d/'o.csv')],capture_output=True,text=True)
+    assert r.returncode!=0 and not (d/'o.csv.adapt.json').exists()  # failed rerun leaves no stale sidecar
+
+def test_date_only_timestamps_are_not_utc_midnight():
+    df=world();df['timestamp']=pd.to_datetime(df.timestamp).dt.strftime('%Y-%m-%d')
+    try:run(df);assert False,'date-only timestamps should be quarantined'
+    except ValueError:pass
 
 if __name__=='__main__':
     failed=0
