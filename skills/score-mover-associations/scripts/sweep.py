@@ -141,7 +141,7 @@ def _job(args):
         sc=_GRID[i]
         _,pairs,_=analyze.analyze_data(d,_PROFILE,sc.get('model',_MODEL),_FOCAL,sc['radius'],sc['bias_floor'],sc['crowd_radius'],
                                        sc['gap_s'],sc['sparse_s'],sc.get('window_s',900),sc.get('lag_s',0),cache)
-        keep=['mover_a','mover_b','confidence_score','independent_episodes','days','typical_episode_quality']
+        keep=['mover_a','mover_b','confidence_score','travel_confidence_score','independent_episodes','days','typical_episode_quality']
         out.append((rep,i,pairs[keep] if len(pairs) else pairs))
     return out
 
@@ -174,7 +174,7 @@ def main():
     _D=_D[['mover_id','source_id','seconds','x','y','sigma','longitude','latitude','region']].reset_index(drop=True)
     budget=int((a.max_memory_gb*2**30) if a.max_memory_gb else min(0.4*total_ram_bytes(),0.7*available_ram_bytes(),24*2**30))
     frame=int(_D.memory_usage(deep=True).sum());spawn=(os.environ.get('COTRAVELER_START_METHOD') or ('fork' if 'fork' in mp.get_all_start_methods() else 'spawn'))!='fork'
-    per_worker=int(1.0e9+(40 if spawn else 25)*frame)
+    per_worker=int(0.6e9+(12 if spawn else 8)*frame)  # measured: ~0.7 GB per worker for a 300k-row frame; the watchdog backs this up
     fit=max(1,budget//per_worker);cpus=max(1,(mp.cpu_count() or 2)-2)
     workers=min(a.workers or cpus,fit)
     if a.workers and a.workers>fit:sys.stderr.write(f'--workers {a.workers} reduced to {fit} to stay within the {budget/2**30:.1f} GB memory budget (about {per_worker/2**30:.1f} GB per worker)\n')
@@ -189,64 +189,75 @@ def main():
     for rep,i,p in res:
         if len(p):per.setdefault((rep,i),p.assign(scenario=i,rep=rep))
     G=len(_GRID);R=a.replicates
-    def scores(rep,i):
-        p=per.get((rep,i));return p.confidence_score.values if p is not None else np.array([])
+    COLS=('confidence_score','travel_confidence_score')
+    def scores(rep,i,col='confidence_score'):
+        p=per.get((rep,i))
+        if p is None:return np.array([])
+        v=p[col].values;return v[v>0]
     # Fully symmetric reference: each of the R+1 datasets (observed + R nulls) is scored against the pooled scores of the
-    # other R, so under no signal the observed statistic is exchangeable with every null statistic.
-    pools=[[np.sort(np.concatenate([scores(r,i) for r in range(0,R+1) if r!=skip] or [np.array([])])) for i in range(G)] for skip in range(R+1)]
-    m_obs=[max(1,len(per[(0,i)])) if (0,i) in per else 1 for i in range(G)]
-    def pval(x,pool,i,nrep):
+    # other R, so under no signal the observed statistic is exchangeable with every null statistic. Two statistics:
+    # all co-location evidence, and journey evidence only (provable dwell excluded: co-workers share a building, not a trip).
+    pools={c:[[np.sort(np.concatenate([scores(r,i,c) for r in range(0,R+1) if r!=skip] or [np.array([])])) for i in range(G)] for skip in range(R+1)] for c in COLS}
+    m_obs={c:[max(1,len(scores(0,i,c))) for i in range(G)] for c in COLS}
+    def pval(x,pool,i,nrep,col):
         # Expected null exceedances per replicate are measured against the number of pairs the observed data scored,
         # so a scenario in which independent movers score nothing at all still yields a small, finite p-value.
-        return (1+(len(pool)-np.searchsorted(pool,x,side='left')))/(1+nrep*m_obs[i])
-    def min_p(rep,subset):
+        return (1+(len(pool)-np.searchsorted(pool,x,side='left')))/(1+nrep*m_obs[col][i])
+    def min_p(rep,subset,col):
         """Per pair: smallest scenario-specific null p-value; leave this replicate out of its own null."""
         best={};arg={}
         for i in subset:
             p=per.get((rep,i))
             if p is None:continue
-            pv=pval(p.confidence_score.values,pools[rep][i],i,R)
+            p=p[p[col]>0]
+            if not len(p):continue
+            pv=pval(p[col].values,pools[col][rep][i],i,R,col)
             for ma,mb,v in zip(p.mover_a,p.mover_b,pv):
                 if v<best.get((ma,mb),2):best[(ma,mb)]=v;arg[(ma,mb)]=i
         return best,arg
-    def evaluate(subset):
+    def evaluate(subset,col='confidence_score'):
         """Max-statistic (family-wise) test: a pair is significant only if its best scenario-specific p-value beats the
-        best p-value found anywhere in the data by independent time-shifted nulls. This prices in scenario selection,
+        best p-value found anywhere in the data by independent null replicates. This prices in scenario selection,
         unscored pairs and dependence between pairs without assuming any p-value distribution."""
-        obs_p,obs_arg=min_p(0,subset)
-        null_best=np.array([min(min_p(r,subset)[0].values(),default=1.0) for r in range(1,R+1)])
+        obs_p,obs_arg=min_p(0,subset,col)
+        null_best=np.array([min(min_p(r,subset,col)[0].values(),default=1.0) for r in range(1,R+1)])
         fwer={k:(1+float((null_best<=v).sum()))/(1+R) for k,v in obs_p.items()}
         return obs_p,obs_arg,fwer
     crowd=[i for i in range(G) if _GRID[i].get('model',_MODEL)=='C'] or list(range(G))
-    adj=evaluate(crowd);anyv=evaluate(list(range(G)))
+    allsc=list(range(G))
+    adj=evaluate(crowd);anyv=evaluate(allsc);tadj=evaluate(crowd,'travel_confidence_score');tany=evaluate(allsc,'travel_confidence_score')
     rows=[]
     for (ma,mb),v in anyv[0].items():
         i=anyv[1][(ma,mb)];r=per[(0,i)];r=r[(r.mover_a==ma)&(r.mover_b==mb)].iloc[0]
         ic=adj[1].get((ma,mb),i)
-        rows.append({'mover_a':ma,'mover_b':mb,'best_score':r.confidence_score,'best_scenario':i,
+        tb=max((float(per[(0,k)][(per[(0,k)].mover_a==ma)&(per[(0,k)].mover_b==mb)].travel_confidence_score.max()) for k in allsc if (0,k) in per and ((per[(0,k)].mover_a==ma)&(per[(0,k)].mover_b==mb)).any()),default=0.)
+        rows.append({'mover_a':ma,'mover_b':mb,'best_score':r.confidence_score,'best_travel_score':tb,'best_scenario':i,
                      'best_radius_m':_GRID[i]['radius'],'best_sparse_s':_GRID[i]['sparse_s'],'best_model':_GRID[i].get('model',a.model),
                      'best_lag_s':_GRID[i].get('lag_s',0),'days':int(r.days),'episodes':int(r.independent_episodes),
                      'scenario_min_p':v,'fwer_p':anyv[2][(ma,mb)],
                      'crowd_adjusted_fwer_p':adj[2].get((ma,mb),1.0),
+                     'travel_fwer_p':tany[2].get((ma,mb),1.0),'travel_crowd_adjusted_fwer_p':tadj[2].get((ma,mb),1.0),
                      'crowd_adjusted_radius_m':_GRID[ic]['radius']})
     res_df=pd.DataFrame(rows);null=np.concatenate([scores(r,i) for r in range(1,R+1) for i in range(G)] or [np.array([])])
     if len(res_df):
         # Default call is the conservative one: significant after the crowd discount. `significant_any_model` also
         # lets the uncrowded model vote, which finds companions in busy places but also schedule-synchronised strangers.
         res_df['significant']=res_df.crowd_adjusted_fwer_p<=a.alpha;res_df['significant_any_model']=res_df.fwer_p<=a.alpha
-        res_df=res_df.sort_values(['crowd_adjusted_fwer_p','fwer_p','scenario_min_p','best_score'],ascending=[True,True,True,False])
+        # Journey call: significant on movement evidence alone (crowd-adjusted); the right call for "travelling with".
+        res_df['significant_travel']=res_df.travel_crowd_adjusted_fwer_p<=a.alpha
+        res_df=res_df.sort_values(['travel_crowd_adjusted_fwer_p','crowd_adjusted_fwer_p','fwer_p','scenario_min_p','best_score'],ascending=[True,True,True,True,False])
         long=pd.concat([per[(0,i)] for i in range(G) if (0,i) in per]);long['radius_m']=long.scenario.map(lambda i:_GRID[i]['radius'])
         long.to_csv(out/'sweep_scenario_scores.csv',index=False)
         sup=long.groupby(['mover_a','mover_b']).scenario.nunique().rename('scenarios_supporting')
         tight=long[long.confidence_score>=70].groupby(['mover_a','mover_b']).radius_m.min().rename('min_radius_m_score70')
         res_df=res_df.merge(sup.reset_index(),on=['mover_a','mover_b'],how='left').merge(tight.reset_index(),on=['mover_a','mover_b'],how='left')
-    if not len(res_df):res_df=pd.DataFrame(columns=['mover_a','mover_b','best_score','scenario_min_p','fwer_p','crowd_adjusted_fwer_p','significant','significant_any_model'])
+    if not len(res_df):res_df=pd.DataFrame(columns=['mover_a','mover_b','best_score','scenario_min_p','fwer_p','crowd_adjusted_fwer_p','travel_crowd_adjusted_fwer_p','significant','significant_any_model','significant_travel'])
     res_df.to_csv(out/'sweep_pairs.csv',index=False)
     (out/'sweep_grid.json').write_text(json.dumps(_GRID,indent=1),encoding='utf-8')
     summary={'scenarios':len(_GRID),'replicates':a.replicates,'pairs_scored':int(len(res_df)),
              'null_pairs_pooled':int(len(null)),'null_score_p95':float(np.quantile(null,.95)) if len(null) else None,
              'null':_NULL,'workers':workers,'memory_budget_gb':round(budget/2**30,1),'significant_pairs':int(res_df.significant.sum()) if len(res_df) else 0,
-             'significant_pairs_any_model':int(res_df.significant_any_model.sum()) if len(res_df) else 0,'alpha':a.alpha,
+             'significant_pairs_any_model':int(res_df.significant_any_model.sum()) if len(res_df) else 0,'significant_pairs_travel':int(res_df.significant_travel.sum()) if len(res_df) else 0,'alpha':a.alpha,
              'note':'scenario_min_p = smallest scenario-specific null p over the grid; fwer_p = (1+number of null replicates whose best pair statistic anywhere is at least as extreme)/(1+replicates), a family-wise p-value that prices in scenario selection and the number of pairs searched. `significant` uses only crowd-adjusted (model C) scenarios; `significant_any_model` adds the uncrowded model. Evidence of co-presence, not of interaction.'}
     summary['smallest_possible_p']=float(1/(1+R))
     if R+1<1/a.alpha:summary['warning']=f'{R} replicates cannot reach alpha={a.alpha}; use at least {int(np.ceil(1/a.alpha))}'

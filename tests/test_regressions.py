@@ -207,6 +207,35 @@ def test_wide_files_read_only_needed_columns():
     df=world(days=1);df['junk1']='x'*40;df['junk2']=1.5;d,_,_=analyze.load([_csv(df)])
     assert 'junk1' not in d.columns and len(d)>0
 
+def test_coworkers_dwelling_together_get_no_journey_score():
+    # Two co-workers sit at one site every day (provable dwell); a companion pair travels. Journey score separates them.
+    rng=np.random.default_rng(11);parts=[]
+    for d in range(4):
+        day=f'2026-03-{10+d:02d}T08:00:00'
+        parts.append(track('focal',day,60,30,43.1,11.5,5,0,rng=rng));parts.append(track('companion',day,60,30,43.1,11.5+12/M_PER_DEG,5,0,rng=rng))
+        for k,name in enumerate(('w1','w2')):parts.append(track(name,day,60,30,43.2+0.0001*k,11.6,0,0,sigma=3,rng=rng))
+        for b in range(10):parts.append(track(f'bg{b}',day,60,30,43.4+0.01*b,11.7,3,1,rng=rng))
+    _,p,_=run(pd.concat(parts,ignore_index=True),sparse_s=60)
+    def row(a,b):
+        m=p[((p.mover_a==a)&(p.mover_b==b))|((p.mover_a==b)&(p.mover_b==a))];return m.iloc[0] if len(m) else None
+    cw=row('w1','w2');cp=row('focal','companion')
+    assert cw is not None and bool(cw.dwell_only) and cw.travel_confidence_score==0 and cw.confidence_score>0,cw
+    assert cp is not None and cp.travel_confidence_score>0 and not bool(cp.dwell_only),cp
+
+def test_asynchronous_moving_companions_match_after_velocity_compensation():
+    # Both move at 8 m/s, sampled every 60 s with a 29 s phase offset (about 230 m apart at the nearest fixes).
+    rng=np.random.default_rng(5);parts=[]
+    for d in range(3):
+        day=f'2026-03-{10+d:02d}T08:00:00';a=track('focal',day,40,60,43.1,11.5,8,0,sigma=4,rng=rng)
+        b=track('companion',(pd.Timestamp(day)+pd.Timedelta(seconds=29)).strftime('%Y-%m-%dT%H:%M:%S'),40,60,43.1+29*8/(M_PER_DEG*np.cos(np.deg2rad(11.5))),11.5+10/M_PER_DEG,8,0,sigma=4,rng=rng)
+        parts+=[a,b]
+        for k in range(8):parts.append(track(f'bg{k}',day,40,60,43.3+0.01*k,11.7,6,2,sigma=4,rng=rng))
+    df=pd.concat(parts,ignore_index=True)
+    d,prof,_=analyze.load([_csv(df)])
+    _,p,_=analyze.analyze_data(d,prof,'C',None,radius=60,sparse_s=90,window_s=60,gap_s=300)  # window model off: one-minute windows cannot fit
+    m=p[((p.mover_a=='focal')&(p.mover_b=='companion'))|((p.mover_a=='companion')&(p.mover_b=='focal'))]
+    assert len(m) and m.iloc[0].travel_confidence_score>50 and m.iloc[0].sparse_episodes>0,m
+
 if __name__=='__main__':
     failed=0
     for name,fn in sorted(globals().items()):

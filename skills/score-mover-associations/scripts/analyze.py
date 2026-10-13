@@ -252,11 +252,34 @@ def encounter_windows(w,model='C',radius=100,crowd_radius=400,movers=None,window
                 'n_a':int(NN[ia]),'n_b':int(NN[ib]),'source_a':SRC[ia],'source_b':SRC[ib]})
     return results
 
+DWELL_KINDS=('co_dwell','sparse_dwell')
+SPARSE_KINDS=('sparse_colocation','sparse_travel','sparse_dwell')
+SCORED_KINDS=('co_dwell','co_travel','proximity')+SPARSE_KINDS
+
+def fix_motion(codes,t,x,y,sig_raw,max_gap,v=1.3):
+    """Per fix, from its neighbours in the same mover's track: state 1 provably moving, 0 provably stationary, -1 unknown
+    (no neighbour within max_gap, or ambiguous), plus a velocity estimate and its standard error for moving fixes.
+    Uses the fix error only (not the correlated-bias floor), since bias cancels in a displacement between consecutive fixes."""
+    n=len(t);o=np.lexsort((t,codes));c,tt,xx,yy,ss=codes[o],t[o],x[o],y[o],sig_raw[o]
+    dt=tt[1:]-tt[:-1];ok=(c[1:]==c[:-1])&(dt>0)&(dt<=max_gap);dtn=np.maximum(dt,1e-9)
+    dx,dy=xx[1:]-xx[:-1],yy[1:]-yy[:-1];disp=np.hypot(dx,dy);err=np.hypot(ss[1:],ss[:-1])
+    mov=ok&((disp-3*err)/dtn>v);sta=ok&((disp+2*err)/dtn<v);amb=ok&~sta
+    movf=np.zeros(n,bool);has=np.zeros(n,bool);ambf=np.zeros(n,bool)
+    for arr,flag in ((movf,mov),(has,ok),(ambf,amb)):arr[:-1]|=flag;arr[1:]|=flag
+    vx=np.zeros(n);vy=np.zeros(n);cnt=np.zeros(n);vs=np.zeros(n)
+    ivx,ivy,ivs=dx/dtn,dy/dtn,err/dtn
+    for sl_f,sl_i in ((slice(None,-1),slice(None)),(slice(1,None),slice(None))):
+        vx[sl_f]+=np.where(mov,ivx,0);vy[sl_f]+=np.where(mov,ivy,0);vs[sl_f]+=np.where(mov,ivs**2,0);cnt[sl_f]+=mov
+    cn=np.maximum(cnt,1);vx/=cn;vy/=cn;vs=np.sqrt(vs)/cn   # mean of adjacent moving intervals; error of that mean
+    state=np.where(movf,1,np.where(has&~ambf,0,-1)).astype(np.int8)
+    res=np.empty(n,np.int8);rvx=np.empty(n);rvy=np.empty(n);rvs=np.empty(n);res[o]=state;rvx[o]=vx;rvy[o]=vy;rvs[o]=vs
+    return res,rvx,rvy,rvs
+
 SPARSE_CHUNK_PAIRS=1_500_000   # target candidate pairs held at once (about 150 MB of working arrays)
 SPARSE_MAX_SURVIVORS=1_000_000 # per-slice cap on pairs that go on to the (costly) crowd count
 SPARSE_CROWD_BATCH=4000
 
-def sparse_encounters(d,radius=100,dt_max=60,crowd_radius=400,bias_floor=30,movers=None,known=frozenset(),window_s=900):
+def sparse_encounters(d,radius=100,dt_max=60,crowd_radius=400,bias_floor=30,movers=None,known=frozenset(),window_s=900,gap_s=600):
     """Point-pair co-location evidence for sparse or bursty cadence where no 15-minute window
     has enough fixes to infer motion. Each match is two fixes from different movers within dt_max
     seconds whose positions are consistent with `radius` given both error models; crowd discounts
@@ -277,6 +300,7 @@ def sparse_encounters(d,radius=100,dt_max=60,crowd_radius=400,bias_floor=30,move
     # cylinder (spatial reach x +-dt_max) instead of reaching several times further in time than the tolerance.
     c=reach/dt_max;ball=1.4143*reach
     codes,_=pd.factorize(ids);n=len(t);pts=np.c_[x,y,t*c]
+    motion,vx,vy,vsig=fix_motion(codes,t,x,y,d.sigma.values,gap_s)
     cov=pd.MultiIndex.from_arrays([ids,(t//window_s).astype(np.int64)]).isin(known) if known else np.zeros(n,bool)
     isfocal=np.isin(ids,list(movers)) if movers else None
     # Crowd = other movers within crowd_radius and +-half a window of the pair, whatever the matching tolerance is
@@ -288,7 +312,7 @@ def sparse_encounters(d,radius=100,dt_max=60,crowd_radius=400,bias_floor=30,move
     sample=np.random.default_rng(0).choice(len(sub.data),size=min(len(sub.data),2000),replace=False)
     deg=float(np.mean(sub.query_ball_point(sub.data[sample],ball,return_length=True)));del sub
     chunk=int(np.clip(SPARSE_CHUNK_PAIRS*2/max(deg,1.),2000,n))
-    keep_a=[];keep_b=[];keep_blk=[];keep_q=[];keep_p=[];keep_crowd=[];keep_mid=[]
+    keep_a=[];keep_b=[];keep_blk=[];keep_q=[];keep_p=[];keep_crowd=[];keep_mid=[];keep_kc=[]
     for i0 in range(0,n,chunk):
         i1=min(n,i0+chunk);lo=int(np.searchsorted(t,t[i0]-margin,'left'));hi=int(np.searchsorted(t,t[i1-1]+margin,'right'))
         tree=cKDTree(pts[lo:hi]);ctree=cKDTree(cpts[lo:hi])
@@ -307,23 +331,56 @@ def sparse_encounters(d,radius=100,dt_max=60,crowd_radius=400,bias_floor=30,move
             if not len(pr):continue
             a=pr[:,0]+lo;b=pr[:,1]+lo;core=(a>=i0)&(a<i1);a,b=a[core],b[core]   # earlier point decides ownership
             m=(ids[a]!=ids[b])&(np.abs(t[a]-t[b])<=dt_max)&~(cov[a]&cov[b]);a,b=a[m],b[m]
-        if not len(a):continue
-        var=sig[a]**2+sig[b]**2;dist2=(x[a]-x[b])**2+(y[a]-y[b])**2
-        pn=ncx2.cdf(radius*radius/var,2,dist2/var);ok=pn>=.015;a,b,pn=a[ok],b[ok],pn[ok]
+        if len(a):
+            var=sig[a]**2+sig[b]**2;dist2=(x[a]-x[b])**2+(y[a]-y[b])**2
+            pn=ncx2.cdf(radius*radius/var,2,dist2/var);ok=pn>=.015;a,b,pn=a[ok],b[ok],pn[ok]
+        else:a=b=np.empty(0,np.int64);pn=np.empty(0)
+        # Velocity-compensated matches: two provably moving fixes sampled at different instants are compared after
+        # advecting each to a shared reference time with its own track velocity (two staggered reference grids so a pair
+        # is never split by a bucket edge). Velocity error is added to the variance.
+        mvi=np.flatnonzero(motion[lo:hi]==1)+lo
+        if len(mvi)>=2:
+            aa2=[];bb2=[];pp2=[]
+            for off in (0.0,dt_max/2.):
+                bk=np.floor((t[mvi]+off)/dt_max);tau=(bk+.5)*dt_max-off;dtau=tau-t[mvi]
+                xa=x[mvi]+vx[mvi]*dtau;ya=y[mvi]+vy[mvi]*dtau;se=np.sqrt(sig[mvi]**2+(vsig[mvi]*np.abs(dtau))**2)
+                good=se<=5.7*radius
+                if good.sum()<2:continue
+                sel=np.flatnonzero(good);mv=mvi[sel];xa,ya,se,bk=xa[sel],ya[sel],se[sel],bk[sel]
+                tr=cKDTree(np.c_[xa,ya,(bk-bk.min())*1e7]);r2=radius*1.5+5.3*float(se.max())
+                if movers:
+                    fl=np.flatnonzero(isfocal[mv]&(mv>=i0)&(mv<i1))
+                    pr2=[(i,j) for i,js in zip(fl,tr.query_ball_point(np.c_[xa,ya,(bk-bk.min())*1e7][fl],r2)) for j in js if j!=i and not (isfocal[mv[j]] and j<i)]
+                    pr2=np.array(pr2,dtype=np.int64).reshape(-1,2)
+                else:
+                    pr2=tr.query_pairs(r2,output_type='ndarray');pr2=pr2[(mv[pr2[:,0]]>=i0)&(mv[pr2[:,0]]<i1)] if len(pr2) else pr2
+                if not len(pr2):continue
+                u,w=pr2[:,0],pr2[:,1];ga,gb=mv[u],mv[w]
+                m=(ids[ga]!=ids[gb])&(np.abs(t[ga]-t[gb])<=dt_max)&~(cov[ga]&cov[gb]);u,w,ga,gb=u[m],w[m],ga[m],gb[m]
+                if not len(u):continue
+                var2=se[u]**2+se[w]**2;d2=(xa[u]-xa[w])**2+(ya[u]-ya[w])**2
+                p2=ncx2.cdf(radius*radius/var2,2,d2/var2);okk=p2>=.015
+                aa2.append(ga[okk]);bb2.append(gb[okk]);pp2.append(p2[okk])
+            if aa2:a=np.concatenate([a]+aa2);b=np.concatenate([b]+bb2);pn=np.concatenate([pn]+pp2)
         if not len(a):continue
         sw=ids[a]>ids[b];a,b=np.where(sw,b,a),np.where(sw,a,b)   # order each pair by mover id
+        ma,mb=motion[a],motion[b]
+        # both moving = journey evidence; both provably stationary = dwell; one of each = passing (not evidence)
+        pas=((ma==1)&(mb==0))|((ma==0)&(mb==1));kc=np.where((ma==1)&(mb==1),1,np.where((ma==0)&(mb==0),2,0)).astype(np.int64)
+        a,b,pn,kc=a[~pas],b[~pas],pn[~pas],kc[~pas]
+        if not len(a):continue
         blk=(((t[a]+t[b])/2)//window_s).astype(np.int64)
         if known:
             both=pd.MultiIndex.from_arrays([ids[a],blk]).isin(known)&pd.MultiIndex.from_arrays([ids[b],blk]).isin(known)
-            a,b,pn,blk=a[~both],b[~both],pn[~both],blk[~both]
+            a,b,pn,blk,kc=a[~both],b[~both],pn[~both],blk[~both],kc[~both]
             if not len(a):continue
         ca,cb=codes[a],codes[b]
         if len(a)>SPARSE_MAX_SURVIVORS:
             # Pathologically dense slice: keep the three most probable matches per pair and window (approximation).
-            o=np.lexsort((-pn,blk,cb,ca));a,b,pn,blk,ca,cb=a[o],b[o],pn[o],blk[o],ca[o],cb[o]
-            nk=np.ones(len(a),bool);nk[1:]=(ca[1:]!=ca[:-1])|(cb[1:]!=cb[:-1])|(blk[1:]!=blk[:-1])
+            o=np.lexsort((-pn,kc,blk,cb,ca));a,b,pn,blk,ca,cb,kc=a[o],b[o],pn[o],blk[o],ca[o],cb[o],kc[o]
+            nk=np.ones(len(a),bool);nk[1:]=(ca[1:]!=ca[:-1])|(cb[1:]!=cb[:-1])|(blk[1:]!=blk[:-1])|(kc[1:]!=kc[:-1])
             rk=np.arange(len(a))-np.maximum.accumulate(np.where(nk,np.arange(len(a)),0));sel=rk<3
-            a,b,pn,blk,ca,cb=a[sel],b[sel],pn[sel],blk[sel],ca[sel],cb[sel]
+            a,b,pn,blk,ca,cb,kc=a[sel],b[sel],pn[sel],blk[sel],ca[sel],cb[sel],kc[sel]
         mid=np.c_[(x[a]+x[b])/2,(y[a]+y[b])/2,(t[a]+t[b])/2*cc]
         crowd=np.empty(len(a),dtype=np.int64);lc=codes[lo:hi]
         for k in range(0,len(a),SPARSE_CROWD_BATCH):
@@ -331,19 +388,20 @@ def sparse_encounters(d,radius=100,dt_max=60,crowd_radius=400,bias_floor=30,move
             for j,(nb,u,v) in enumerate(zip(ctree.query_ball_point(mid[sl],crowd_radius),ca[sl],cb[sl])):
                 un=np.unique(lc[nb]);crowd[k+j]=un.size-int((un==u).any())-int((un==v).any())
         q=pn/(1+crowd)
-        o=np.lexsort((-q,blk,cb,ca));a,b,pn,blk,ca,cb,q,crowd,mid=(v[o] for v in (a,b,pn,blk,ca,cb,q,crowd,mid))
-        first=np.ones(len(a),bool);first[1:]=(ca[1:]!=ca[:-1])|(cb[1:]!=cb[:-1])|(blk[1:]!=blk[:-1])
-        for lst,arr in zip((keep_a,keep_b,keep_blk,keep_q,keep_p,keep_crowd,keep_mid),(a,b,blk,q,pn,crowd,mid)):lst.append(arr[first])
+        o=np.lexsort((-q,kc,blk,cb,ca));a,b,pn,blk,ca,cb,q,crowd,mid,kc=(v[o] for v in (a,b,pn,blk,ca,cb,q,crowd,mid,kc))
+        first=np.ones(len(a),bool);first[1:]=(ca[1:]!=ca[:-1])|(cb[1:]!=cb[:-1])|(blk[1:]!=blk[:-1])|(kc[1:]!=kc[:-1])
+        for lst,arr in zip((keep_a,keep_b,keep_blk,keep_q,keep_p,keep_crowd,keep_mid,keep_kc),(a,b,blk,q,pn,crowd,mid,kc)):lst.append(arr[first])
     if not keep_a:return []
-    a,b,blk,q,pn,crowd,mid=(np.concatenate(v) for v in (keep_a,keep_b,keep_blk,keep_q,keep_p,keep_crowd,keep_mid))
+    a,b,blk,q,pn,crowd,mid,kc=(np.concatenate(v) for v in (keep_a,keep_b,keep_blk,keep_q,keep_p,keep_crowd,keep_mid,keep_kc))
     ca,cb=codes[a],codes[b]
-    o=np.lexsort((-q,blk,cb,ca));a,b,blk,q,pn,crowd,mid,ca,cb=(v[o] for v in (a,b,blk,q,pn,crowd,mid,ca,cb))
-    first=np.ones(len(a),bool);first[1:]=(ca[1:]!=ca[:-1])|(cb[1:]!=cb[:-1])|(blk[1:]!=blk[:-1])
-    return [{'mover_a':ids[i],'mover_b':ids[j],'block':int(bk),'event_type':'sparse_colocation',
+    o=np.lexsort((-q,kc,blk,cb,ca));a,b,blk,q,pn,crowd,mid,ca,cb,kc=(v[o] for v in (a,b,blk,q,pn,crowd,mid,ca,cb,kc))
+    first=np.ones(len(a),bool);first[1:]=(ca[1:]!=ca[:-1])|(cb[1:]!=cb[:-1])|(blk[1:]!=blk[:-1])|(kc[1:]!=kc[:-1])
+    kind_name=('sparse_colocation','sparse_travel','sparse_dwell')
+    return [{'mover_a':ids[i],'mover_b':ids[j],'block':int(bk),'event_type':kind_name[int(kk)],
              'start':float(min(t[i],t[j])),'end':float(max(t[i],t[j])),'q':float(qq),'p_near':float(pp),'crowd':int(cr),
              'x':float(m[0]),'y':float(m[1]),'sigma':float(np.hypot(sig[i],sig[j])),'n_a':1,'n_b':1,
              'source_a':src[i],'source_b':src[j]}
-            for i,j,bk,qq,pp,cr,m in zip(a[first],b[first],blk[first],q[first],pn[first],crowd[first],mid[first])]
+            for i,j,bk,qq,pp,cr,m,kk in zip(a[first],b[first],blk[first],q[first],pn[first],crowd[first],mid[first],kc[first])]
 
 def events(rows,origin,model):
     if not rows:return pd.DataFrame()
@@ -360,7 +418,7 @@ def events(rows,origin,model):
         x,y=float(X[i:j].mean()),float(Y[i:j].mean())
         lon=float(wrap_lon(origin[0]+x/kx));lat=origin[1]+y/111320
         # Evidence per episode saturates; pings are never multiplied as independent evidence.
-        if kind=='sparse_colocation':
+        if kind.startswith('sparse'):
             # Independent matched fix pairs; a lone coincidence stays weak, repeats saturate at 3.
             quality=float(Q[i:j].mean())*min(1,n/3)
         else:
@@ -383,22 +441,29 @@ def events(rows,origin,model):
           'limitations':'Sampled window evidence; continuous occupation and interaction unconfirmed'})
     return pd.DataFrame(out)
 
+def _evidence(h):
+    """Score and typical episode quality for a set of episodes: at most one contribution per type and day."""
+    daily=h.assign(day=h.start_utc.str[:10]).groupby(['day','event_type']).quality.max()
+    typicalq=float(daily.median()) if len(daily) else 0.
+    return 100*(-np.expm1(-float(daily.sum())))*min(1,typicalq/.45),typicalq
+
 def pair_scores(e,min_days=2):
+    """Per pair: `confidence_score` (all co-location evidence) and `travel_confidence_score` (journey evidence only:
+    provable dwell, i.e. both stationary, is excluded; unknown-motion evidence stays in). Co-workers who share a building
+    score on the first but not the second."""
     out=[]
-    if e.empty:return pd.DataFrame(columns=['mover_a','mover_b','confidence_score','accepted'])
+    if e.empty:return pd.DataFrame(columns=['mover_a','mover_b','confidence_score','travel_confidence_score','accepted'])
     for (a,b),h in e.groupby(['mover_a','mover_b'],sort=True):
-        h=h[h.event_type.isin(['co_dwell','co_travel','proximity','sparse_colocation']) & h.quality.gt(0)]
-        days=h.start_utc.str[:10].nunique()
-        # Aggregate at most one contribution per type/day; repeated pings/visits cannot inflate it.
-        daily=h.assign(day=h.start_utc.str[:10]).groupby(['day','event_type']).quality.max()
-        typicalq=float(daily.median()) if len(daily) else 0.
-        score=100*(-np.expm1(-float(daily.sum())))*min(1,typicalq/.45)
-        out.append({'mover_a':a,'mover_b':b,'confidence_score':round(score,2),'independent_episodes':len(h),
-                    'days':days,'typical_episode_quality':round(typicalq,4),
+        h=h[h.event_type.isin(SCORED_KINDS) & h.quality.gt(0)]
+        days=h.start_utc.str[:10].nunique();score,typicalq=_evidence(h)
+        ht=h[~h.event_type.isin(DWELL_KINDS)];tscore,ttyp=_evidence(ht) if len(ht) else (0.,0.)
+        out.append({'mover_a':a,'mover_b':b,'confidence_score':round(score,2),'travel_confidence_score':round(tscore,2),'independent_episodes':len(h),
+                    'days':days,'travel_days':int(ht.start_utc.str[:10].nunique()),'typical_episode_quality':round(typicalq,4),
                     'co_travel_episodes':int((h.event_type=='co_travel').sum()),'co_dwell_episodes':int((h.event_type=='co_dwell').sum()),
-                    'proximity_episodes':int((h.event_type=='proximity').sum()),'sparse_episodes':int((h.event_type=='sparse_colocation').sum()),
-                    'dwell_only':bool((h.event_type=='co_dwell').all()),
+                    'proximity_episodes':int((h.event_type=='proximity').sum()),'sparse_episodes':int(h.event_type.isin(SPARSE_KINDS).sum()),
+                    'dwell_only':bool(h.event_type.isin(DWELL_KINDS).all()),
                     'accepted':bool(days>=min_days and score>=70 and typicalq>=.4),
+                    'accepted_travel':bool(int(ht.start_utc.str[:10].nunique())>=min_days and tscore>=70 and ttyp>=.4),
                     'confidence_kind':'heuristic_evidence','calibration_status':'uncalibrated'})
     return pd.DataFrame(out).sort_values(['confidence_score','mover_a','mover_b'],ascending=[False,True,True])
 
@@ -464,7 +529,7 @@ def analyze_data(d,profile,model='C',movers=None,radius=100,bias_floor=30,crowd_
         rows=encounter_windows(wr,model,radius,crowd_radius,movers,window_s)
         if sparse_s and model!='A':
             known=frozenset(zip(wr.mover_id[wr.state!='unknown'],wr.block[wr.state!='unknown'].astype(int)))
-            rows+=sparse_encounters(g,radius,sparse_s,crowd_radius,bias_floor,movers,known,window_s)
+            rows+=sparse_encounters(g,radius,sparse_s,crowd_radius,bias_floor,movers,known,window_s,gap_s)
         er=events(rows,origin,model)
         if len(er):es.append(er.assign(region=int(rid),lag_seconds=lag_s))
     for rid,g in d.groupby('region'):
@@ -492,8 +557,8 @@ def run(paths,out,model='C',movers=None,link_ids=False,radius=100,bias_floor=30,
     e,pairs,w=analyze_data(d,profile,model,movers,radius,bias_floor,crowd_radius,gap_s,sparse_s,window_s,lag_s)
     if len(e):
         e=e.merge(pairs[['mover_a','mover_b','confidence_score','independent_episodes','accepted']],on=['mover_a','mover_b'])
-        e.loc[e.accepted & e.event_type.isin(['co_dwell','co_travel','proximity','sparse_colocation'])].to_csv(out/'matches.csv',index=False)
-        e.loc[~e.accepted | ~e.event_type.isin(['co_dwell','co_travel','proximity','sparse_colocation'])].to_csv(out/'review_candidates.csv',index=False)
+        e.loc[e.accepted & e.event_type.isin(SCORED_KINDS)].to_csv(out/'matches.csv',index=False)
+        e.loc[~e.accepted | ~e.event_type.isin(SCORED_KINDS)].to_csv(out/'review_candidates.csv',index=False)
     else:
         pd.DataFrame(columns=['mover_a','mover_b','event_type','confidence_score','longitude','latitude','mgrs']).to_csv(out/'matches.csv',index=False)
         pd.DataFrame(columns=['mover_a','mover_b','event_type']).to_csv(out/'review_candidates.csv',index=False)
