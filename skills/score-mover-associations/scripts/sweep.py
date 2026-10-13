@@ -75,6 +75,15 @@ def start_memory_watchdog(limit_bytes,out):
                 kill_children(pid);os._exit(3)
     threading.Thread(target=watch,daemon=True).start()
 
+def plan_workers(frame_bytes,total_ram,available_ram,cpus,requested=None,max_memory_gb=None,spawn=False):
+    """Memory budget and worker count. Budget: --max-memory-gb, else 40% of RAM, at most 70% of what is free, at most
+    24 GB (12.8 GB on a 32 GB machine). Each worker is estimated at 0.6 GB plus 12x (spawn) or 8x (fork) the slimmed data;
+    the worker count is the CPUs minus 2, reduced until the estimate fits the budget."""
+    budget=int(max_memory_gb*2**30) if max_memory_gb else int(min(0.4*total_ram,0.7*available_ram,24*2**30))
+    per_worker=int(0.6e9+(12 if spawn else 8)*frame_bytes)
+    fit=max(1,budget//per_worker);workers=min(requested or max(1,cpus-2),fit)
+    return workers,budget,per_worker,fit
+
 def suggest_grid(d,profile,lags=(0,),models=('C','B')):
     """Scenario grid derived from the data's own error and cadence; the agent may override via --grid-json.
     Dimensions: match radius, point-pair time tolerance, motion-window length (longer when cadence is slow),
@@ -176,11 +185,8 @@ def main():
     _GRID=json.loads(Path(a.grid_json).read_text(encoding='utf-8')) if a.grid_json else suggest_grid(_D,_PROFILE,tuple(a.lags))
     # Keep only what the analysis needs: every worker holds copies of this frame.
     _D=_D[['mover_id','source_id','seconds','x','y','sigma','longitude','latitude','region']].reset_index(drop=True)
-    budget=int((a.max_memory_gb*2**30) if a.max_memory_gb else min(0.4*total_ram_bytes(),0.7*available_ram_bytes(),24*2**30))
     frame=int(_D.memory_usage(deep=True).sum());spawn=(os.environ.get('COTRAVELER_START_METHOD') or ('fork' if 'fork' in mp.get_all_start_methods() else 'spawn'))!='fork'
-    per_worker=int(0.6e9+(12 if spawn else 8)*frame)  # measured: ~0.7 GB per worker for a 300k-row frame; the watchdog backs this up
-    fit=max(1,budget//per_worker);cpus=max(1,(mp.cpu_count() or 2)-2)
-    workers=min(a.workers or cpus,fit)
+    workers,budget,per_worker,fit=plan_workers(frame,total_ram_bytes(),available_ram_bytes(),mp.cpu_count() or 2,a.workers,a.max_memory_gb,spawn)
     if a.workers and a.workers>fit:sys.stderr.write(f'--workers {a.workers} reduced to {fit} to stay within the {budget/2**30:.1f} GB memory budget (about {per_worker/2**30:.1f} GB per worker)\n')
     start_memory_watchdog(int(budget*1.25),out)
     seeds=np.random.SeedSequence(a.seed).generate_state(a.replicates+1)

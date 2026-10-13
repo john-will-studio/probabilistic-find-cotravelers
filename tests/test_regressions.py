@@ -259,6 +259,20 @@ def test_median_separation_reports_how_close_a_pair_travels():
     r2=p2[((p2.mover_a=='companion')&(p2.mover_b=='focal'))|((p2.mover_a=='focal')&(p2.mover_b=='companion'))].iloc[0]
     assert r2.median_separation_m>r.median_separation_m+25,(r.median_separation_m,r2.median_separation_m)
 
+def test_memory_plan_for_a_32gb_windows_machine():
+    import sweep
+    gb=2**30
+    # 32 GB machine, 28 GB free, 16 CPUs, Windows (spawn): default budget is 12.8 GB, and the planned workers fit it.
+    for frame in (50e6,500e6,2e9,6e9):
+        w,budget,per,fit=sweep.plan_workers(frame,32*gb,28*gb,16,spawn=True)
+        assert abs(budget/gb-12.8)<0.01,budget/gb
+        assert w>=1 and (w*per<=budget or w==1),(frame,w,per/gb,budget/gb)
+    # a user-set budget wins, and a busy machine (little free memory) shrinks the default budget
+    assert sweep.plan_workers(1e8,32*gb,28*gb,16,max_memory_gb=6,spawn=True)[1]==6*gb
+    assert sweep.plan_workers(1e8,32*gb,8*gb,16,spawn=True)[1]<12.8*gb
+    # more CPUs never exceed what memory allows
+    assert sweep.plan_workers(2e9,32*gb,28*gb,64,spawn=True)[0]<=sweep.plan_workers(2e9,32*gb,28*gb,64,spawn=True)[3]
+
 if __name__=='__main__':
     failed=0
     for name,fn in sorted(globals().items()):
