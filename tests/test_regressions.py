@@ -236,6 +236,21 @@ def test_asynchronous_moving_companions_match_after_velocity_compensation():
     m=p[((p.mover_a=='focal')&(p.mover_b=='companion'))|((p.mover_a=='companion')&(p.mover_b=='focal'))]
     assert len(m) and m.iloc[0].travel_confidence_score>50 and m.iloc[0].sparse_episodes>0,m
 
+def test_walking_pace_companions_need_stricter_still_threshold():
+    # Two walkers at 1 m/s, one fix per minute: each interval is ~60 m, inside the default 'stationary' band (1.3 m/s).
+    rng=np.random.default_rng(21);parts=[]
+    for d in range(4):
+        day=f'2026-03-{10+d:02d}T08:00:00'
+        parts.append(track('focal',day,50,60,43.1,11.5,1.0,0,sigma=4,rng=rng));parts.append(track('companion',day,50,60,43.1,11.5+9/M_PER_DEG,1.0,0,sigma=4,rng=rng))
+        for b in range(8):parts.append(track(f'bg{b}',day,50,60,43.3+0.01*b,11.7,0.9,0.4,sigma=4,rng=rng))
+    d,prof,_=analyze.load([_csv(pd.concat(parts,ignore_index=True))])
+    def travel(still):
+        _,p,_=analyze.analyze_data(d,prof,'C',None,radius=60,sparse_s=90,window_s=600,gap_s=300,still_speed=still)
+        m=p[((p.mover_a=='focal')&(p.mover_b=='companion'))|((p.mover_a=='companion')&(p.mover_b=='focal'))]
+        return float(m.iloc[0].travel_confidence_score) if len(m) else 0.
+    assert travel(1.3)<travel(0.4),(travel(1.3),travel(0.4))
+    assert travel(0.4)>30,travel(0.4)
+
 if __name__=='__main__':
     failed=0
     for name,fn in sorted(globals().items()):

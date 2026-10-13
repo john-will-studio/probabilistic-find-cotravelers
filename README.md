@@ -53,7 +53,7 @@ What it handles: sparse and bursty cadence (point-pair evidence), dense tracks (
 
 ## Memory and Windows
 
-Designed to stay inside a 32 GB machine, Windows included (tested on macOS with the Windows-style `spawn` start method; the code uses no POSIX-only calls on the default path).
+Designed to stay inside a 32 GB machine, Windows included (CI runs the test suite on real Windows runners for Python 3.12 and 3.14, plus a Windows peak-memory check: 0.77 GB peak for a 181k-row sweep on a 16 GB runner; see `docs/audit-2026-10.md`).
 
 - Install `requirements.txt` (it includes `psutil`, used for the memory watchdog and RAM detection on all platforms).
 - `sweep.py` picks its worker count from a memory budget (default: 40% of RAM, at most 24 GB, never more than 70% of what is currently free; on a 32 GB machine about 12.8 GB). Override with `--max-memory-gb` and `--workers`; requested workers are reduced to fit. A watchdog stops the sweep cleanly (exit code 3, reason in `sweep_summary.json`) if its processes exceed the budget by 25%, instead of letting the machine run out of memory.

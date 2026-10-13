@@ -94,7 +94,11 @@ def suggest_grid(d,profile,lags=(0,),models=('C','B')):
                 for model in models:
                     if model=='B' and r!=radii[len(radii)//2]:continue  # keep the grid affordable
                     grid.append({'radius':r,'sparse_s':t,'gap_s':gap,'window_s':window,'bias_floor':float(max(10,err/2)),
-                                 'crowd_radius':float(max(400,4*r)),'model':model,'lag_s':float(lag)})
+                                 'crowd_radius':float(max(400,4*r)),'model':model,'lag_s':float(lag),'still_speed':1.3})
+                    # Slow movers (walking pace) read as stationary below 1.3 m/s; a stricter 'still' threshold keeps them
+                    # as movers of unknown state so their co-location counts as journey evidence.
+                    if model=='C' and r==radii[len(radii)//2]:
+                        grid.append({**grid[-1],'still_speed':0.4})
     return grid
 
 def day_permute_null(d,rng):
@@ -140,7 +144,7 @@ def _job(args):
     for i in idx:
         sc=_GRID[i]
         _,pairs,_=analyze.analyze_data(d,_PROFILE,sc.get('model',_MODEL),_FOCAL,sc['radius'],sc['bias_floor'],sc['crowd_radius'],
-                                       sc['gap_s'],sc['sparse_s'],sc.get('window_s',900),sc.get('lag_s',0),cache)
+                                       sc['gap_s'],sc['sparse_s'],sc.get('window_s',900),sc.get('lag_s',0),cache,None,sc.get('still_speed',1.3))
         keep=['mover_a','mover_b','confidence_score','travel_confidence_score','independent_episodes','days','typical_episode_quality']
         out.append((rep,i,pairs[keep] if len(pairs) else pairs))
     return out
@@ -148,7 +152,7 @@ def _job(args):
 def _groups():
     """Scenario indices grouped by identical motion-window settings so fits are computed once per group."""
     g={}
-    for i,sc in enumerate(_GRID):g.setdefault((sc['bias_floor'],sc.get('window_s',900),sc['gap_s'],sc.get('lag_s',0)),[]).append(i)
+    for i,sc in enumerate(_GRID):g.setdefault((sc['bias_floor'],sc.get('window_s',900),sc['gap_s'],sc.get('lag_s',0),sc.get('still_speed',1.3)),[]).append(i)
     return list(g.values())
 
 def main():
@@ -158,7 +162,7 @@ def main():
     ap.add_argument('--replicates',type=int,default=20,help='null replicates; each re-runs the full grid')
     ap.add_argument('--workers',type=int,default=None,help='default: as many as CPUs allow within the memory budget')
     ap.add_argument('--max-memory-gb',type=float,default=None,help='memory budget for all sweep processes (default: 40%% of RAM, at most 24 GB); workers are reduced to fit and the sweep stops if it is exceeded')
-    ap.add_argument('--grid-json',help='JSON list of scenarios {radius,sparse_s,gap_s,window_s,bias_floor,crowd_radius,model,lag_s}; default derived from data')
+    ap.add_argument('--grid-json',help='JSON list of scenarios {radius,sparse_s,gap_s,window_s,bias_floor,crowd_radius,model,lag_s,still_speed}; default derived from data')
     ap.add_argument('--model',choices=['A','B','C'],default='C');ap.add_argument('--link-ids',action='store_true')
     ap.add_argument('--alpha',type=float,default=.05);ap.add_argument('--min-shift-days',type=float,default=7)
     ap.add_argument('--null',choices=['auto','day_permute','time_shift'],default='auto',help='null: day_permute keeps the observation schedule (needs >=4 UTC days); time_shift for short data')

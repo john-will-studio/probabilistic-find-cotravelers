@@ -135,7 +135,7 @@ def load(paths,link_ids=False,assume_tz=None):
               'crs':'EPSG:4326','timestamp_timezone':'UTC','origin':[lon0,lat0],'origins':origins,
               'regions':region_summary(d)},pd.concat(rejected,ignore_index=True)
 
-def windows(d,bias_floor=30,window_s=900,gap_s=600):
+def windows(d,bias_floor=30,window_s=900,gap_s=600,still_speed=1.3):
     """Per mover and window: weighted linear fit of position against time (vectorised over all windows at once).
     Windows with fewer than 3 fixes, under 180 s of span or a gap above gap_s are 'unknown' (location only)."""
     cols=['mover_id','block','x','y','vx','vy','speed','state','sigma','start','end','n','chi','vsig','source_id']
@@ -164,7 +164,7 @@ def windows(d,bias_floor=30,window_s=900,gap_s=600):
     cov00=S2/det;cov11=S0/det
     loc_sigma=np.sqrt(cov00*n/np.minimum(n,3)+bias_floor**2)
     speed=np.hypot(f1x,f1y);speed_se=np.sqrt(cov11*np.maximum(1,chi))
-    state=np.where((speed+2*speed_se<1.3)&(chi<6),'stationary',np.where((speed-2*speed_se>1.3)&(chi<6),'moving','unknown'))
+    state=np.where((speed+2*speed_se<still_speed)&(chi<6),'stationary',np.where((speed-2*speed_se>1.3)&(chi<6),'moving','unknown'))
     state=np.where(unk,'unknown',state);np_err.__exit__(None,None,None)
     # sources per window (almost always one)
     sc,_=pd.factorize(src);smin=np.minimum.reduceat(sc,st);smax=np.maximum.reduceat(sc,st)
@@ -256,14 +256,14 @@ DWELL_KINDS=('co_dwell','sparse_dwell')
 SPARSE_KINDS=('sparse_colocation','sparse_travel','sparse_dwell')
 SCORED_KINDS=('co_dwell','co_travel','proximity')+SPARSE_KINDS
 
-def fix_motion(codes,t,x,y,sig_raw,max_gap,v=1.3):
+def fix_motion(codes,t,x,y,sig_raw,max_gap,v=1.3,still=1.3):
     """Per fix, from its neighbours in the same mover's track: state 1 provably moving, 0 provably stationary, -1 unknown
     (no neighbour within max_gap, or ambiguous), plus a velocity estimate and its standard error for moving fixes.
     Uses the fix error only (not the correlated-bias floor), since bias cancels in a displacement between consecutive fixes."""
     n=len(t);o=np.lexsort((t,codes));c,tt,xx,yy,ss=codes[o],t[o],x[o],y[o],sig_raw[o]
     dt=tt[1:]-tt[:-1];ok=(c[1:]==c[:-1])&(dt>0)&(dt<=max_gap);dtn=np.maximum(dt,1e-9)
     dx,dy=xx[1:]-xx[:-1],yy[1:]-yy[:-1];disp=np.hypot(dx,dy);err=np.hypot(ss[1:],ss[:-1])
-    mov=ok&((disp-3*err)/dtn>v);sta=ok&((disp+2*err)/dtn<v);amb=ok&~sta
+    mov=ok&((disp-3*err)/dtn>v);sta=ok&((disp+2*err)/dtn<still);amb=ok&~sta
     movf=np.zeros(n,bool);has=np.zeros(n,bool);ambf=np.zeros(n,bool)
     for arr,flag in ((movf,mov),(has,ok),(ambf,amb)):arr[:-1]|=flag;arr[1:]|=flag
     vx=np.zeros(n);vy=np.zeros(n);cnt=np.zeros(n);vs=np.zeros(n)
@@ -279,7 +279,7 @@ SPARSE_CHUNK_PAIRS=1_500_000   # target candidate pairs held at once (about 150 
 SPARSE_MAX_SURVIVORS=1_000_000 # per-slice cap on pairs that go on to the (costly) crowd count
 SPARSE_CROWD_BATCH=4000
 
-def sparse_encounters(d,radius=100,dt_max=60,crowd_radius=400,bias_floor=30,movers=None,known=frozenset(),window_s=900,gap_s=600):
+def sparse_encounters(d,radius=100,dt_max=60,crowd_radius=400,bias_floor=30,movers=None,known=frozenset(),window_s=900,gap_s=600,still_speed=1.3):
     """Point-pair co-location evidence for sparse or bursty cadence where no 15-minute window
     has enough fixes to infer motion. Each match is two fixes from different movers within dt_max
     seconds whose positions are consistent with `radius` given both error models; crowd discounts
@@ -300,7 +300,7 @@ def sparse_encounters(d,radius=100,dt_max=60,crowd_radius=400,bias_floor=30,move
     # cylinder (spatial reach x +-dt_max) instead of reaching several times further in time than the tolerance.
     c=reach/dt_max;ball=1.4143*reach
     codes,_=pd.factorize(ids);n=len(t);pts=np.c_[x,y,t*c]
-    motion,vx,vy,vsig=fix_motion(codes,t,x,y,d.sigma.values,gap_s)
+    motion,vx,vy,vsig=fix_motion(codes,t,x,y,d.sigma.values,gap_s,still=still_speed)
     cov=pd.MultiIndex.from_arrays([ids,(t//window_s).astype(np.int64)]).isin(known) if known else np.zeros(n,bool)
     isfocal=np.isin(ids,list(movers)) if movers else None
     # Crowd = other movers within crowd_radius and +-half a window of the pair, whatever the matching tolerance is
@@ -511,7 +511,7 @@ def merge_tile_duplicates(e):
         else:keep.append(True);last[key]=(s0,e0,m,len(keep)-1)
     return e.loc[np.array(keep)].drop(columns=['_s','_e']).sort_index().reset_index(drop=True)
 
-def analyze_data(d,profile,model='C',movers=None,radius=100,bias_floor=30,crowd_radius=400,gap_s=600,sparse_s=60,window_s=900,lag_s=0,cache=None,min_days=None):
+def analyze_data(d,profile,model='C',movers=None,radius=100,bias_floor=30,crowd_radius=400,gap_s=600,sparse_s=60,window_s=900,lag_s=0,cache=None,min_days=None,still_speed=1.3):
     """Score pairs on already-loaded data; reusable by parameter sweeps and null controls.
     `cache` (a dict) lets scenarios that share window settings reuse the expensive motion fits."""
     ws=[];es=[]
@@ -520,16 +520,16 @@ def analyze_data(d,profile,model='C',movers=None,radius=100,bias_floor=30,crowd_
             # Follower search: shift the focal movers' clocks so a companion trailing by lag_s lines up with them.
             if not movers:raise ValueError('lag_s requires focal movers')
             g=g.copy();g.loc[g.mover_id.isin(movers),'seconds']+=lag_s
-        key=(int(rid),tile,bias_floor,window_s,gap_s,lag_s)
+        key=(int(rid),tile,bias_floor,window_s,gap_s,lag_s,still_speed)
         if cache is not None and key in cache:wr=cache[key]
         else:
-            wr=windows(g,bias_floor=bias_floor,window_s=window_s,gap_s=gap_s);wr['region']=int(rid)
+            wr=windows(g,bias_floor=bias_floor,window_s=window_s,gap_s=gap_s,still_speed=still_speed);wr['region']=int(rid)
             if cache is not None:cache[key]=wr
         ws.append(wr)
         rows=encounter_windows(wr,model,radius,crowd_radius,movers,window_s)
         if sparse_s and model!='A':
             known=frozenset(zip(wr.mover_id[wr.state!='unknown'],wr.block[wr.state!='unknown'].astype(int)))
-            rows+=sparse_encounters(g,radius,sparse_s,crowd_radius,bias_floor,movers,known,window_s,gap_s)
+            rows+=sparse_encounters(g,radius,sparse_s,crowd_radius,bias_floor,movers,known,window_s,gap_s,still_speed)
         er=events(rows,origin,model)
         if len(er):es.append(er.assign(region=int(rid),lag_seconds=lag_s))
     for rid,g in d.groupby('region'):
