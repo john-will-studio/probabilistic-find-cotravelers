@@ -41,13 +41,13 @@ python skills/score-mover-associations/scripts/adapt.py raw.csv --out data.csv -
 
 ## Find an unknown companion of a known object (sweep + null)
 
-No single parameter setting suits every dataset, so `sweep.py` runs a grid of scenarios in parallel (match radius, time tolerance, window length, crowd model, optional follower lag), repeats it on time-shifted null copies of the data, and reports which pairs are more synchronous than independent movers with the same habits, with scenario-corrected p-values and Benjamini-Hochberg q:
+No single parameter setting suits every dataset, so `sweep.py` runs a grid of scenarios in parallel (match radius, time tolerance, window length, crowd model, optional follower lag), repeats it on null copies of the data (day-wise label permutation that preserves the observation schedule; time shifts for short data), and reports which pairs recur together more than independent movers with the same habits, with family-wise p-values that account for the whole scenario grid:
 
 ```bash
 python skills/score-mover-associations/scripts/sweep.py data.csv --out outputs/sweep --movers KNOWN_ID --lags 0 120 --replicates 20
 ```
 
-Outputs `sweep_pairs.csv` (ranked pairs, best radius, `min_radius_m_score70`, `null_q`, `significant`), `sweep_scenario_scores.csv`, `sweep_grid.json` and `sweep_summary.json` (with advice when nothing is significant). Override the grid with `--grid-json`.
+Outputs `sweep_pairs.csv` (ranked pairs, best radius and lag, `min_radius_m_score70`, `fwer_p`, `crowd_adjusted_fwer_p`, `significant`, `significant_any_model`), `sweep_scenario_scores.csv`, `sweep_grid.json` and `sweep_summary.json` (with advice when nothing is significant; 20 replicates is the minimum at which alpha .05 is reachable). Override the grid with `--grid-json`.
 
 What it handles: sparse and bursty cadence (point-pair evidence), dense tracks (motion windows, with overtaking rejected), datasets spanning many regions, wide coastlines/corridors (tiled with overlap) or containing stray coordinates (partitioned, not aborted), the antimeridian, sub-second to nanosecond timestamp precision, focal searches in 100k+ mover populations. What it does not: calibrated interaction probabilities, elliptical or 3D errors, polar data, or relationships that leave no co-location signal.
 
