@@ -127,35 +127,45 @@ def load(paths,link_ids=False,assume_tz=None):
               'regions':region_summary(d)},pd.concat(rejected,ignore_index=True)
 
 def windows(d,bias_floor=30,window_s=900,gap_s=600):
-    rows=[]
-    d=d.assign(block=(d.seconds//window_s).astype(int))
-    for (mid,block),g in d.groupby(['mover_id','block'],sort=True):
-        g=g.sort_values('seconds');n=len(g);t=g.seconds.values;xy=g[['x','y']].values
-        if n<3 or t[-1]-t[0]<180 or np.diff(t).max()>gap_s:
-            loc=xy.mean(axis=0)
-            rows.append({'mover_id':mid,'block':block,'x':loc[0],'y':loc[1],
-                         'vx':0.,'vy':0.,'speed':0.,'state':'unknown',
-                         'sigma':float(np.sqrt(g.sigma.max()**2+bias_floor**2+np.var(xy,axis=0).sum())),
-                         'start':t[0],'end':t[-1],'n':n,'chi':None,'vsig':0.,
-                         'source_id':'|'.join(sorted(g.source_id.unique()))})
-            continue
-        # Cap effective sample count and retain bias uncertainty in location estimate.
-        var=g.sigma.values**2+bias_floor**2;w=1/var
-        center=block*window_s+window_s/2
-        tt=t-center;design=np.c_[np.ones(n),tt]
-        cov=np.linalg.inv(design.T@(w[:,None]*design))
-        fit=cov@(design.T@(w[:,None]*xy));res=xy-design@fit
-        chi=float(np.sum(res**2/var[:,None])/max(1,2*n-4))
-        neff=min(n,3)
-        loc_sigma=float(np.sqrt(cov[0,0]*n/neff+bias_floor**2))
-        velocity=fit[1];speed=float(np.linalg.norm(velocity))
-        speed_se=float(np.sqrt(cov[1,1]*max(1,chi)))
-        # Do not turn an unresolved slope into a dwell.
-        state='stationary' if speed+2*speed_se<1.3 and chi<6 else 'moving' if speed-2*speed_se>1.3 and chi<6 else 'unknown'
-        rows.append({'mover_id':mid,'block':block,'x':fit[0,0],'y':fit[0,1],
-                     'vx':velocity[0],'vy':velocity[1],'speed':speed,'state':state,'sigma':loc_sigma,
-                     'start':t[0],'end':t[-1],'n':n,'chi':chi,'vsig':speed_se,'source_id':'|'.join(sorted(g.source_id.unique()))})
-    return pd.DataFrame(rows)
+    """Per mover and window: weighted linear fit of position against time (vectorised over all windows at once).
+    Windows with fewer than 3 fixes, under 180 s of span or a gap above gap_s are 'unknown' (location only)."""
+    cols=['mover_id','block','x','y','vx','vy','speed','state','sigma','start','end','n','chi','vsig','source_id']
+    if not len(d):return pd.DataFrame(columns=cols)
+    mc,mi=pd.factorize(d.mover_id.values,sort=True);blk=(d.seconds.values//window_s).astype(np.int64)
+    order=np.lexsort((d.seconds.values,blk,mc))
+    mc,blk=mc[order],blk[order];t=d.seconds.values[order];x=d.x.values[order];y=d.y.values[order];sg=d.sigma.values[order]
+    src=d.source_id.values[order]
+    N=len(t);new=np.ones(N,bool);new[1:]=(mc[1:]!=mc[:-1])|(blk[1:]!=blk[:-1])
+    st=np.flatnonzero(new);en=np.r_[st[1:],N];n=en-st;gid=np.repeat(np.arange(len(st)),n)
+    t0,t1=t[st],t[en-1];gap=np.zeros(N);gap[1:]=np.diff(t);gap[st]=0;maxgap=np.maximum.reduceat(gap,st)
+    unk=(n<3)|(t1-t0<180)|(maxgap>gap_s)
+    rs=lambda v:np.add.reduceat(v,st)
+    out_n=n.astype(int)
+    mx,my=rs(x)/n,rs(y)/n
+    var_pos=rs((x-mx[gid])**2)/n+rs((y-my[gid])**2)/n
+    sig_unk=np.sqrt(np.maximum.reduceat(sg,st)**2+bias_floor**2+var_pos)
+    center=blk[st]*window_s+window_s/2.
+    tt=t-center[gid];w=1/(sg**2+bias_floor**2)
+    np_err=np.errstate(invalid='ignore',divide='ignore');np_err.__enter__()  # degenerate windows are masked as unknown below
+    S0,S1,S2=rs(w),rs(w*tt),rs(w*tt*tt);Bx,By,Cx,Cy=rs(w*x),rs(w*y),rs(w*tt*x),rs(w*tt*y)
+    det=S0*S2-S1*S1;det=np.where(det==0,np.nan,det)
+    f0x=(S2*Bx-S1*Cx)/det;f1x=(-S1*Bx+S0*Cx)/det;f0y=(S2*By-S1*Cy)/det;f1y=(-S1*By+S0*Cy)/det
+    resx=x-f0x[gid]-f1x[gid]*tt;resy=y-f0y[gid]-f1y[gid]*tt
+    chi=rs(w*(resx*resx+resy*resy))/np.maximum(1,2*n-4)
+    cov00=S2/det;cov11=S0/det
+    loc_sigma=np.sqrt(cov00*n/np.minimum(n,3)+bias_floor**2)
+    speed=np.hypot(f1x,f1y);speed_se=np.sqrt(cov11*np.maximum(1,chi))
+    state=np.where((speed+2*speed_se<1.3)&(chi<6),'stationary',np.where((speed-2*speed_se>1.3)&(chi<6),'moving','unknown'))
+    state=np.where(unk,'unknown',state);np_err.__exit__(None,None,None)
+    # sources per window (almost always one)
+    sc,_=pd.factorize(src);smin=np.minimum.reduceat(sc,st);smax=np.maximum.reduceat(sc,st)
+    source=src[st].astype(object)
+    for k in np.flatnonzero(smin!=smax):source[k]='|'.join(sorted(set(src[st[k]:en[k]])))
+    res=pd.DataFrame({'mover_id':np.asarray(mi)[mc[st]],'block':blk[st],
+        'x':np.where(unk,mx,f0x),'y':np.where(unk,my,f0y),'vx':np.where(unk,0.,f1x),'vy':np.where(unk,0.,f1y),
+        'speed':np.where(unk,0.,speed),'state':state,'sigma':np.where(unk,sig_unk,loc_sigma),
+        'start':t0,'end':t1,'n':out_n,'chi':np.where(unk,np.nan,chi),'vsig':np.where(unk,0.,speed_se),'source_id':source})
+    return res[cols]
 
 def near_probability(a,b,radius):
     variance=a.sigma*a.sigma+b.sigma*b.sigma
@@ -168,8 +178,8 @@ def encounter_windows(w,model='C',radius=100,crowd_radius=400,movers=None,window
     focal=set(movers) if movers else None
     for block,g in w.groupby('block',sort=True):
         g=g.sort_values('mover_id').reset_index(drop=True)
-        ids=g.mover_id.values;X=g.x.values;Y=g.y.values;VX=g.vx.values;VY=g.vy.values;SP=g.speed.values
-        ST=g.state.values;SG=g.sigma.values;VS=g.vsig.values;T0=g.start.values;T1=g.end.values;NN=g.n.values;SRC=g.source_id.values
+        ids=g.mover_id.to_numpy(dtype=object);X=g.x.values;Y=g.y.values;VX=g.vx.values;VY=g.vy.values;SP=g.speed.values
+        ST=g.state.values;SG=g.sigma.values;VS=g.vsig.values;T0=g.start.values;T1=g.end.values;NN=g.n.values;SRC=g.source_id.to_numpy(dtype=object)
         xy=np.c_[X,Y];tree=cKDTree(xy)
         # A window whose sigma exceeds ~5.7x the radius cannot reach p_near>=.015 even at zero distance;
         # leaving it out keeps one wildly uncertain mover from inflating every neighbour search.
@@ -186,41 +196,50 @@ def encounter_windows(w,model='C',radius=100,crowd_radius=400,movers=None,window
         else:
             cand={(i,j) for i,j in tree.query_pairs(reach) if elig[i] and elig[j]}
         center=block*window_s+window_s/2
-        for ia,ib in sorted(cand):
-            if ids[ia]==ids[ib]:continue
-            start,end=max(T0[ia],T0[ib]),min(T1[ia],T1[ib])
-            if end-start<180:continue
-            var=SG[ia]**2+SG[ib]**2
-            d0x,d0y=X[ia]-X[ib],Y[ia]-Y[ib]
-            moving=ST[ia]==ST[ib]=='moving'
-            pn=float(ncx2.cdf(radius*radius/var,2,(d0x*d0x+d0y*d0y)/var))
-            if moving:
-                # Two movers can share a velocity direction yet be hundreds of metres apart at the ends of the
-                # window (overtaking). Re-judge proximity at both ends of the shared interval, inflating variance
-                # by the velocity-fit uncertainty so true companions are not penalised for estimation noise.
-                dvx,dvy=VX[ia]-VX[ib],VY[ia]-VY[ib]
-                for t in (start,end):
-                    tau=t-center;vt=var+(VS[ia]**2+VS[ib]**2)*tau*tau
-                    sep2=(d0x+dvx*tau)**2+(d0y+dvy*tau)**2
-                    # Only a separation clearly beyond the radius (given its uncertainty) counts against the pair.
-                    if sep2>(radius+2*np.sqrt(vt))**2:pn=min(pn,float(ncx2.cdf(radius*radius/vt,2,sep2/vt)))
-            if pn<.015:continue
-            kind='proximity' if model=='A' else 'indeterminate'
-            if model!='A':
-                if ST[ia]==ST[ib]=='stationary':kind='co_dwell'
-                elif moving:
-                    va=np.array([VX[ia],VY[ia]]);vb=np.array([VX[ib],VY[ib]])
-                    cosine=np.dot(va,vb)/max(SP[ia]*SP[ib],1e-9)
-                    if cosine>.85 and np.linalg.norm(va-vb)<max(2.,.25*(SP[ia]+SP[ib])):
-                        kind='co_travel'
-                elif {ST[ia],ST[ib]}=={'stationary','moving'}:kind='passing'
-            midpoint=(xy[ia]+xy[ib])/2
-            crowd=len(set(tree.query_ball_point(midpoint,crowd_radius))-{ia,ib})
-            q=pn*(1/(1+crowd) if model=='C' else 1.)
-            if kind in ['passing','indeterminate']:q=0.
+        if not cand:continue
+        pr=np.array(sorted(cand));IA,IB=pr[:,0],pr[:,1]
+        ok=(ids[IA]!=ids[IB]);start=np.maximum(T0[IA],T0[IB]);end=np.minimum(T1[IA],T1[IB]);ok&=(end-start>=180)
+        IA,IB,start,end=IA[ok],IB[ok],start[ok],end[ok]
+        if not len(IA):continue
+        var=SG[IA]**2+SG[IB]**2;d0x,d0y=X[IA]-X[IB],Y[IA]-Y[IB]
+        moving=(ST[IA]=='moving')&(ST[IB]=='moving')
+        pn=ncx2.cdf(radius*radius/var,2,(d0x*d0x+d0y*d0y)/var)
+        if moving.any():
+            # Two movers can share a velocity direction yet be hundreds of metres apart at the ends of the
+            # window (overtaking). Re-judge proximity at both ends of the shared interval, inflating variance
+            # by the velocity-fit uncertainty so true companions are not penalised for estimation noise.
+            dvx,dvy=VX[IA]-VX[IB],VY[IA]-VY[IB]
+            for tend in (start,end):
+                tau=tend-center;vt=var+(VS[IA]**2+VS[IB]**2)*tau*tau
+                sep2=(d0x+dvx*tau)**2+(d0y+dvy*tau)**2
+                # Only a separation clearly beyond the radius (given its uncertainty) counts against the pair.
+                pe=ncx2.cdf(radius*radius/vt,2,sep2/vt)
+                pn=np.where(moving&(sep2>(radius+2*np.sqrt(vt))**2),np.minimum(pn,pe),pn)
+        keep=pn>=.015
+        IA,IB,start,end,pn,moving=IA[keep],IB[keep],start[keep],end[keep],pn[keep],moving[keep]
+        if not len(IA):continue
+        kinds=np.full(len(IA),'proximity' if model=='A' else 'indeterminate',dtype=object)
+        if model!='A':
+            sa,sb=ST[IA],ST[IB]
+            kinds[(sa=='stationary')&(sb=='stationary')]='co_dwell'
+            va=np.c_[VX[IA],VY[IA]];vb=np.c_[VX[IB],VY[IB]]
+            cosine=(va*vb).sum(1)/np.maximum(SP[IA]*SP[IB],1e-9)
+            travel=moving&(cosine>.85)&(np.linalg.norm(va-vb,axis=1)<np.maximum(2.,.25*(SP[IA]+SP[IB])))
+            kinds[travel]='co_travel'
+            kinds[((sa=='stationary')&(sb=='moving'))|((sa=='moving')&(sb=='stationary'))]='passing'
+        mid=(xy[IA]+xy[IB])/2
+        # crowd = other windows within crowd_radius of the pair's midpoint (windows are one per mover per block)
+        cnt=np.asarray(tree.query_ball_point(mid,crowd_radius,return_length=True))
+        self_in=(np.hypot(*(xy[IA]-mid).T)<=crowd_radius).astype(int)+(np.hypot(*(xy[IB]-mid).T)<=crowd_radius).astype(int)
+        crowd=cnt-self_in
+        q=pn*(1/(1+crowd) if model=='C' else 1.)
+        q=np.where(np.isin(kinds,['passing','indeterminate']),0.,q)
+        sig=np.hypot(SG[IA],SG[IB])
+        for k in range(len(IA)):
+            ia,ib=IA[k],IB[k]
             results.append({'mover_a':ids[ia],'mover_b':ids[ib],'block':int(block),
-                'event_type':kind,'start':start,'end':end,'q':q,'p_near':pn,'crowd':crowd,
-                'x':midpoint[0],'y':midpoint[1],'sigma':float(np.hypot(SG[ia],SG[ib])),
+                'event_type':kinds[k],'start':start[k],'end':end[k],'q':float(q[k]),'p_near':float(pn[k]),'crowd':int(crowd[k]),
+                'x':mid[k,0],'y':mid[k,1],'sigma':float(sig[k]),
                 'n_a':int(NN[ia]),'n_b':int(NN[ib]),'source_a':SRC[ia],'source_b':SRC[ib]})
     return results
 
@@ -239,7 +258,8 @@ def sparse_encounters(d,radius=100,dt_max=60,crowd_radius=400,bias_floor=30,move
     if len(elig)<2:return []
     d=d.iloc[elig];sig=sig_all[elig]
     pts=np.c_[d.x.values,d.y.values,d.seconds.values*c]
-    ids=d.mover_id.values;tsec=d.seconds.values;tree=cKDTree(pts)
+    ids=d.mover_id.to_numpy(dtype=object);tsec=d.seconds.values;tree=cKDTree(pts)
+    codes,_uniq=pd.factorize(ids)
     # Fixes already inside a motion-state window are the window model's business; drop such pairs before enumeration.
     cov=pd.MultiIndex.from_arrays([ids,(tsec//window_s).astype(int)]).isin(known) if known else np.zeros(len(ids),bool)
     reach=radius*1.5+5.3*float(sig.max())
@@ -264,20 +284,27 @@ def sparse_encounters(d,radius=100,dt_max=60,crowd_radius=400,bias_floor=30,move
     var=sig[a]**2+sig[b]**2;dist2=(d.x.values[a]-d.x.values[b])**2+(d.y.values[a]-d.y.values[b])**2
     p=ncx2.cdf(radius*radius/var,2,dist2/var);ok=p>=.015
     a,b,p=a[ok],b[ok],p[ok]
-    best={};t=d.seconds.values;x=d.x.values;y=d.y.values;src=d.source_id.values
-    for i,j,pi in zip(a,b,p):
-        if ids[i]>ids[j]:i,j=j,i
-        blk=int(((t[i]+t[j])/2)//window_s)
-        if (ids[i],blk) in known and (ids[j],blk) in known:continue
-        mid=np.array([(x[i]+x[j])/2,(y[i]+y[j])/2,(t[i]+t[j])/2*c])
-        crowd=len(set(ids[tree.query_ball_point(mid,crowd_radius)])-{ids[i],ids[j]})
-        q=float(pi)/(1+crowd);prev=best.get((ids[i],ids[j],blk))
-        if prev is not None and prev['q']>=q:continue
-        best[(ids[i],ids[j],blk)]={'mover_a':ids[i],'mover_b':ids[j],'block':blk,'event_type':'sparse_colocation',
-                     'start':min(t[i],t[j]),'end':max(t[i],t[j]),'q':q,'p_near':float(pi),'crowd':crowd,
-                     'x':mid[0],'y':mid[1],'sigma':float(np.hypot(sig[i],sig[j])),'n_a':1,'n_b':1,
-                     'source_a':src[i],'source_b':src[j]}
-    return list(best.values())
+    if not len(a):return []
+    t=d.seconds.values;x=d.x.values;y=d.y.values;src=d.source_id.to_numpy(dtype=object)
+    sw=ids[a]>ids[b];a,b=np.where(sw,b,a),np.where(sw,a,b)  # order each pair by mover id
+    blk=(((t[a]+t[b])/2)//window_s).astype(np.int64)
+    if known:
+        both=pd.MultiIndex.from_arrays([ids[a],blk]).isin(known)&pd.MultiIndex.from_arrays([ids[b],blk]).isin(known)
+        a,b,p,blk=a[~both],b[~both],p[~both],blk[~both]
+        if not len(a):return []
+    ca,cb=codes[a],codes[b]
+    mid=np.c_[(x[a]+x[b])/2,(y[a]+y[b])/2,(t[a]+t[b])/2*c]
+    near=tree.query_ball_point(mid,crowd_radius)
+    crowd=np.array([np.setdiff1d(np.unique(codes[nb]),[u,v]).size for nb,u,v in zip(near,ca,cb)])
+    q=p/(1+crowd)
+    order=np.lexsort((-q,blk,cb,ca));a,b,p,blk,ca,cb,q,crowd,mid=(v[order] for v in (a,b,p,blk,ca,cb,q,crowd,mid))
+    first=np.ones(len(a),bool);first[1:]=(ca[1:]!=ca[:-1])|(cb[1:]!=cb[:-1])|(blk[1:]!=blk[:-1])
+    a,b,p,blk,q,crowd,mid=a[first],b[first],p[first],blk[first],q[first],crowd[first],mid[first]
+    return [{'mover_a':ids[i],'mover_b':ids[j],'block':int(bk),'event_type':'sparse_colocation',
+             'start':float(min(t[i],t[j])),'end':float(max(t[i],t[j])),'q':float(qq),'p_near':float(pp),'crowd':int(cr),
+             'x':float(m[0]),'y':float(m[1]),'sigma':float(np.hypot(sig[i],sig[j])),'n_a':1,'n_b':1,
+             'source_a':src[i],'source_b':src[j]}
+            for i,j,bk,qq,pp,cr,m in zip(a,b,blk,q,p,crowd,mid)]
 
 def events(rows,origin,model):
     if not rows:return pd.DataFrame()
