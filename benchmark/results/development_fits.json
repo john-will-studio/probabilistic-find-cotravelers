@@ -1,0 +1,2512 @@
+[
+  {
+    "dataset": "moderate",
+    "split": [
+      0,
+      3
+    ],
+    "config": {
+      "model": "A",
+      "radius": 100,
+      "bias_floor": 30,
+      "crowd_radius": 400,
+      "gap_s": 600
+    },
+    "metrics": {
+      "tp": 3,
+      "fp": 20,
+      "fn": 1,
+      "precision": 0.13043478260869565,
+      "recall": 0.75,
+      "false_positive_rate": 0.04065040650406504,
+      "accepted_pairs": [
+        [
+          "U000",
+          "U001"
+        ],
+        [
+          "U004",
+          "U005"
+        ],
+        [
+          "U006",
+          "U007"
+        ],
+        [
+          "U010",
+          "U012"
+        ],
+        [
+          "U010",
+          "U013"
+        ],
+        [
+          "U011",
+          "U012"
+        ],
+        [
+          "U012",
+          "U013"
+        ],
+        [
+          "U014",
+          "U016"
+        ],
+        [
+          "U014",
+          "U017"
+        ],
+        [
+          "U014",
+          "U018"
+        ],
+        [
+          "U015",
+          "U016"
+        ],
+        [
+          "U016",
+          "U017"
+        ],
+        [
+          "U016",
+          "U018"
+        ],
+        [
+          "U016",
+          "U019"
+        ],
+        [
+          "U017",
+          "U018"
+        ],
+        [
+          "U022",
+          "U023"
+        ],
+        [
+          "U022",
+          "U024"
+        ],
+        [
+          "U022",
+          "U025"
+        ],
+        [
+          "U022",
+          "U026"
+        ],
+        [
+          "U023",
+          "U024"
+        ],
+        [
+          "U024",
+          "U025"
+        ],
+        [
+          "U024",
+          "U026"
+        ],
+        [
+          "U025",
+          "U026"
+        ]
+      ]
+    },
+    "scores": [
+      {
+        "mover_a": "U016",
+        "mover_b": "U018",
+        "confidence_score": 95.9,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.7996,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U014",
+        "mover_b": "U016",
+        "confidence_score": 95.6,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.7841,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U012",
+        "confidence_score": 95.43,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.7749,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U014",
+        "mover_b": "U018",
+        "confidence_score": 94.57,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.7259,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U022",
+        "mover_b": "U024",
+        "confidence_score": 94.54,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.7324,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U026",
+        "confidence_score": 94.3,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.7328,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U016",
+        "mover_b": "U017",
+        "confidence_score": 91.1,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.6011,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U012",
+        "mover_b": "U013",
+        "confidence_score": 90.65,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.5971,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U017",
+        "mover_b": "U018",
+        "confidence_score": 90.44,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.5822,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U000",
+        "mover_b": "U001",
+        "confidence_score": 90.4,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.5875,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U004",
+        "mover_b": "U005",
+        "confidence_score": 90.37,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.5875,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U025",
+        "confidence_score": 89.59,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.5652,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      }
+    ]
+  },
+  {
+    "dataset": "moderate",
+    "split": [
+      0,
+      3
+    ],
+    "config": {
+      "model": "B",
+      "radius": 100,
+      "bias_floor": 30,
+      "crowd_radius": 400,
+      "gap_s": 600
+    },
+    "metrics": {
+      "tp": 3,
+      "fp": 20,
+      "fn": 1,
+      "precision": 0.13043478260869565,
+      "recall": 0.75,
+      "false_positive_rate": 0.04065040650406504,
+      "accepted_pairs": [
+        [
+          "U000",
+          "U001"
+        ],
+        [
+          "U004",
+          "U005"
+        ],
+        [
+          "U006",
+          "U007"
+        ],
+        [
+          "U010",
+          "U012"
+        ],
+        [
+          "U010",
+          "U013"
+        ],
+        [
+          "U011",
+          "U012"
+        ],
+        [
+          "U012",
+          "U013"
+        ],
+        [
+          "U014",
+          "U016"
+        ],
+        [
+          "U014",
+          "U017"
+        ],
+        [
+          "U014",
+          "U018"
+        ],
+        [
+          "U015",
+          "U016"
+        ],
+        [
+          "U016",
+          "U017"
+        ],
+        [
+          "U016",
+          "U018"
+        ],
+        [
+          "U016",
+          "U019"
+        ],
+        [
+          "U017",
+          "U018"
+        ],
+        [
+          "U022",
+          "U023"
+        ],
+        [
+          "U022",
+          "U024"
+        ],
+        [
+          "U022",
+          "U025"
+        ],
+        [
+          "U022",
+          "U026"
+        ],
+        [
+          "U023",
+          "U024"
+        ],
+        [
+          "U024",
+          "U025"
+        ],
+        [
+          "U024",
+          "U026"
+        ],
+        [
+          "U025",
+          "U026"
+        ]
+      ]
+    },
+    "scores": [
+      {
+        "mover_a": "U022",
+        "mover_b": "U024",
+        "confidence_score": 99.72,
+        "independent_episodes": 12,
+        "days": 4,
+        "typical_episode_quality": 0.7524,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U026",
+        "confidence_score": 99.7,
+        "independent_episodes": 12,
+        "days": 4,
+        "typical_episode_quality": 0.7317,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U000",
+        "mover_b": "U001",
+        "confidence_score": 99.31,
+        "independent_episodes": 16,
+        "days": 4,
+        "typical_episode_quality": 0.6249,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U025",
+        "confidence_score": 99.07,
+        "independent_episodes": 14,
+        "days": 4,
+        "typical_episode_quality": 0.569,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U025",
+        "mover_b": "U026",
+        "confidence_score": 98.9,
+        "independent_episodes": 14,
+        "days": 4,
+        "typical_episode_quality": 0.5753,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U022",
+        "mover_b": "U026",
+        "confidence_score": 98.39,
+        "independent_episodes": 12,
+        "days": 4,
+        "typical_episode_quality": 0.5174,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U022",
+        "mover_b": "U025",
+        "confidence_score": 97.8,
+        "independent_episodes": 14,
+        "days": 4,
+        "typical_episode_quality": 0.4942,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U023",
+        "mover_b": "U024",
+        "confidence_score": 97.27,
+        "independent_episodes": 20,
+        "days": 4,
+        "typical_episode_quality": 0.4556,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U016",
+        "mover_b": "U018",
+        "confidence_score": 95.9,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.7996,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U014",
+        "mover_b": "U016",
+        "confidence_score": 95.6,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.7841,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U012",
+        "confidence_score": 95.43,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.7749,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U014",
+        "mover_b": "U018",
+        "confidence_score": 94.57,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.7259,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      }
+    ]
+  },
+  {
+    "dataset": "moderate",
+    "split": [
+      0,
+      3
+    ],
+    "config": {
+      "model": "C",
+      "radius": 100,
+      "bias_floor": 30,
+      "crowd_radius": 400,
+      "gap_s": 600
+    },
+    "metrics": {
+      "tp": 3,
+      "fp": 0,
+      "fn": 1,
+      "precision": 1.0,
+      "recall": 0.75,
+      "false_positive_rate": 0.0,
+      "accepted_pairs": [
+        [
+          "U000",
+          "U001"
+        ],
+        [
+          "U004",
+          "U005"
+        ],
+        [
+          "U006",
+          "U007"
+        ]
+      ]
+    },
+    "scores": [
+      {
+        "mover_a": "U000",
+        "mover_b": "U001",
+        "confidence_score": 99.31,
+        "independent_episodes": 16,
+        "days": 4,
+        "typical_episode_quality": 0.6249,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U004",
+        "mover_b": "U005",
+        "confidence_score": 90.37,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.5875,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U006",
+        "mover_b": "U007",
+        "confidence_score": 79.14,
+        "independent_episodes": 8,
+        "days": 4,
+        "typical_episode_quality": 0.4351,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U002",
+        "mover_b": "U003",
+        "confidence_score": 64.05,
+        "independent_episodes": 8,
+        "days": 4,
+        "typical_episode_quality": 0.3747,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U012",
+        "confidence_score": 36.87,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.2583,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U012",
+        "mover_b": "U013",
+        "confidence_score": 24.16,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.199,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U022",
+        "mover_b": "U024",
+        "confidence_score": 23.15,
+        "independent_episodes": 12,
+        "days": 4,
+        "typical_episode_quality": 0.1505,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U026",
+        "confidence_score": 22.32,
+        "independent_episodes": 12,
+        "days": 4,
+        "typical_episode_quality": 0.1463,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U013",
+        "confidence_score": 19.55,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.1753,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U016",
+        "mover_b": "U018",
+        "confidence_score": 16.78,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.1599,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U014",
+        "mover_b": "U016",
+        "confidence_score": 16.19,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.1568,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U025",
+        "confidence_score": 15.36,
+        "independent_episodes": 14,
+        "days": 4,
+        "typical_episode_quality": 0.1138,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      }
+    ]
+  },
+  {
+    "dataset": "moderate",
+    "split": [
+      0,
+      3
+    ],
+    "config": {
+      "model": "C",
+      "radius": 150,
+      "bias_floor": 30,
+      "crowd_radius": 400,
+      "gap_s": 600
+    },
+    "metrics": {
+      "tp": 4,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "false_positive_rate": 0.0,
+      "accepted_pairs": [
+        [
+          "U000",
+          "U001"
+        ],
+        [
+          "U002",
+          "U003"
+        ],
+        [
+          "U004",
+          "U005"
+        ],
+        [
+          "U006",
+          "U007"
+        ]
+      ]
+    },
+    "scores": [
+      {
+        "mover_a": "U000",
+        "mover_b": "U001",
+        "confidence_score": 99.92,
+        "independent_episodes": 16,
+        "days": 4,
+        "typical_episode_quality": 0.8904,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U004",
+        "mover_b": "U005",
+        "confidence_score": 96.8,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.8648,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U006",
+        "mover_b": "U007",
+        "confidence_score": 94.17,
+        "independent_episodes": 8,
+        "days": 4,
+        "typical_episode_quality": 0.7218,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U002",
+        "mover_b": "U003",
+        "confidence_score": 92.47,
+        "independent_episodes": 8,
+        "days": 4,
+        "typical_episode_quality": 0.656,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U012",
+        "confidence_score": 51.78,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.322,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U012",
+        "mover_b": "U013",
+        "confidence_score": 44.21,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.2905,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U013",
+        "confidence_score": 40.39,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.2743,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U022",
+        "mover_b": "U024",
+        "confidence_score": 33.33,
+        "independent_episodes": 12,
+        "days": 4,
+        "typical_episode_quality": 0.1918,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U026",
+        "confidence_score": 33.02,
+        "independent_episodes": 12,
+        "days": 4,
+        "typical_episode_quality": 0.1904,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U011",
+        "mover_b": "U012",
+        "confidence_score": 30.15,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.2278,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U011",
+        "confidence_score": 28.4,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.2188,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U025",
+        "confidence_score": 28.23,
+        "independent_episodes": 14,
+        "days": 4,
+        "typical_episode_quality": 0.1701,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      }
+    ]
+  },
+  {
+    "dataset": "moderate",
+    "split": [
+      0,
+      3
+    ],
+    "config": {
+      "model": "C",
+      "radius": 200,
+      "bias_floor": 30,
+      "crowd_radius": 650,
+      "gap_s": 600
+    },
+    "metrics": {
+      "tp": 4,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "false_positive_rate": 0.0,
+      "accepted_pairs": [
+        [
+          "U000",
+          "U001"
+        ],
+        [
+          "U002",
+          "U003"
+        ],
+        [
+          "U004",
+          "U005"
+        ],
+        [
+          "U006",
+          "U007"
+        ]
+      ]
+    },
+    "scores": [
+      {
+        "mover_a": "U000",
+        "mover_b": "U001",
+        "confidence_score": 99.96,
+        "independent_episodes": 16,
+        "days": 4,
+        "typical_episode_quality": 0.9805,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U004",
+        "mover_b": "U005",
+        "confidence_score": 97.93,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.972,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U006",
+        "mover_b": "U007",
+        "confidence_score": 97.12,
+        "independent_episodes": 8,
+        "days": 4,
+        "typical_episode_quality": 0.895,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U002",
+        "mover_b": "U003",
+        "confidence_score": 96.62,
+        "independent_episodes": 8,
+        "days": 4,
+        "typical_episode_quality": 0.854,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U012",
+        "confidence_score": 54.36,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.3326,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U012",
+        "mover_b": "U013",
+        "confidence_score": 52.4,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.3247,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U013",
+        "confidence_score": 51.03,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.3194,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U011",
+        "mover_b": "U012",
+        "confidence_score": 43.78,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.2881,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U011",
+        "confidence_score": 42.66,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.283,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U011",
+        "mover_b": "U013",
+        "confidence_score": 37.39,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.2589,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U022",
+        "mover_b": "U024",
+        "confidence_score": 35.3,
+        "independent_episodes": 12,
+        "days": 4,
+        "typical_episode_quality": 0.1994,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U026",
+        "confidence_score": 35.26,
+        "independent_episodes": 12,
+        "days": 4,
+        "typical_episode_quality": 0.1992,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      }
+    ]
+  },
+  {
+    "dataset": "moderate",
+    "split": [
+      0,
+      3
+    ],
+    "config": {
+      "model": "C",
+      "radius": 150,
+      "bias_floor": 60,
+      "crowd_radius": 650,
+      "gap_s": 600
+    },
+    "metrics": {
+      "tp": 4,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "false_positive_rate": 0.0,
+      "accepted_pairs": [
+        [
+          "U000",
+          "U001"
+        ],
+        [
+          "U002",
+          "U003"
+        ],
+        [
+          "U004",
+          "U005"
+        ],
+        [
+          "U006",
+          "U007"
+        ]
+      ]
+    },
+    "scores": [
+      {
+        "mover_a": "U000",
+        "mover_b": "U001",
+        "confidence_score": 99.15,
+        "independent_episodes": 16,
+        "days": 4,
+        "typical_episode_quality": 0.598,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U004",
+        "mover_b": "U005",
+        "confidence_score": 90.11,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.5796,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U006",
+        "mover_b": "U007",
+        "confidence_score": 86.25,
+        "independent_episodes": 8,
+        "days": 4,
+        "typical_episode_quality": 0.5024,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U002",
+        "mover_b": "U003",
+        "confidence_score": 84.21,
+        "independent_episodes": 8,
+        "days": 4,
+        "typical_episode_quality": 0.4671,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U012",
+        "confidence_score": 28.17,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.218,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U012",
+        "mover_b": "U013",
+        "confidence_score": 23.44,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.1952,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U013",
+        "confidence_score": 21.47,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.1852,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U022",
+        "mover_b": "U024",
+        "confidence_score": 18.43,
+        "independent_episodes": 12,
+        "days": 4,
+        "typical_episode_quality": 0.1293,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U026",
+        "confidence_score": 18.2,
+        "independent_episodes": 12,
+        "days": 4,
+        "typical_episode_quality": 0.1282,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U011",
+        "mover_b": "U012",
+        "confidence_score": 16.9,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.1609,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U011",
+        "confidence_score": 16.1,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.1561,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U025",
+        "confidence_score": 15.33,
+        "independent_episodes": 14,
+        "days": 4,
+        "typical_episode_quality": 0.1144,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      }
+    ]
+  },
+  {
+    "dataset": "moderate",
+    "split": [
+      0,
+      3
+    ],
+    "config": {
+      "model": "C",
+      "radius": 200,
+      "bias_floor": 60,
+      "crowd_radius": 650,
+      "gap_s": 600
+    },
+    "metrics": {
+      "tp": 4,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "false_positive_rate": 0.0,
+      "accepted_pairs": [
+        [
+          "U000",
+          "U001"
+        ],
+        [
+          "U002",
+          "U003"
+        ],
+        [
+          "U004",
+          "U005"
+        ],
+        [
+          "U006",
+          "U007"
+        ]
+      ]
+    },
+    "scores": [
+      {
+        "mover_a": "U000",
+        "mover_b": "U001",
+        "confidence_score": 99.83,
+        "independent_episodes": 16,
+        "days": 4,
+        "typical_episode_quality": 0.8022,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U004",
+        "mover_b": "U005",
+        "confidence_score": 95.66,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.7859,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U006",
+        "mover_b": "U007",
+        "confidence_score": 94.0,
+        "independent_episodes": 8,
+        "days": 4,
+        "typical_episode_quality": 0.7102,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U002",
+        "mover_b": "U003",
+        "confidence_score": 93.1,
+        "independent_episodes": 8,
+        "days": 4,
+        "typical_episode_quality": 0.6744,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U012",
+        "confidence_score": 42.56,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.2829,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U012",
+        "mover_b": "U013",
+        "confidence_score": 38.14,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.2638,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U013",
+        "confidence_score": 36.12,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.2549,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U011",
+        "mover_b": "U012",
+        "confidence_score": 30.58,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.2296,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U011",
+        "confidence_score": 29.61,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.2248,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U022",
+        "mover_b": "U024",
+        "confidence_score": 27.66,
+        "independent_episodes": 12,
+        "days": 4,
+        "typical_episode_quality": 0.1686,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U026",
+        "confidence_score": 27.46,
+        "independent_episodes": 12,
+        "days": 4,
+        "typical_episode_quality": 0.1677,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U011",
+        "mover_b": "U013",
+        "confidence_score": 26.04,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.2065,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      }
+    ]
+  },
+  {
+    "dataset": "severe",
+    "split": [
+      0,
+      3
+    ],
+    "config": {
+      "model": "A",
+      "radius": 100,
+      "bias_floor": 30,
+      "crowd_radius": 400,
+      "gap_s": 600
+    },
+    "metrics": {
+      "tp": 0,
+      "fp": 3,
+      "fn": 4,
+      "precision": 0.0,
+      "recall": 0.0,
+      "false_positive_rate": 0.006097560975609756,
+      "accepted_pairs": [
+        [
+          "U010",
+          "U012"
+        ],
+        [
+          "U022",
+          "U024"
+        ],
+        [
+          "U024",
+          "U026"
+        ]
+      ]
+    },
+    "scores": [
+      {
+        "mover_a": "U010",
+        "mover_b": "U012",
+        "confidence_score": 74.62,
+        "independent_episodes": 5,
+        "days": 4,
+        "typical_episode_quality": 0.4218,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U022",
+        "mover_b": "U024",
+        "confidence_score": 74.07,
+        "independent_episodes": 12,
+        "days": 4,
+        "typical_episode_quality": 0.4103,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U026",
+        "confidence_score": 71.79,
+        "independent_episodes": 7,
+        "days": 4,
+        "typical_episode_quality": 0.4045,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U016",
+        "mover_b": "U018",
+        "confidence_score": 68.48,
+        "independent_episodes": 9,
+        "days": 4,
+        "typical_episode_quality": 0.3939,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U014",
+        "mover_b": "U016",
+        "confidence_score": 61.35,
+        "independent_episodes": 7,
+        "days": 4,
+        "typical_episode_quality": 0.3564,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U016",
+        "mover_b": "U017",
+        "confidence_score": 38.59,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.2649,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U000",
+        "mover_b": "U001",
+        "confidence_score": 38.0,
+        "independent_episodes": 10,
+        "days": 4,
+        "typical_episode_quality": 0.2657,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U022",
+        "mover_b": "U026",
+        "confidence_score": 36.77,
+        "independent_episodes": 15,
+        "days": 4,
+        "typical_episode_quality": 0.2454,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U012",
+        "mover_b": "U013",
+        "confidence_score": 33.56,
+        "independent_episodes": 5,
+        "days": 4,
+        "typical_episode_quality": 0.2412,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U014",
+        "mover_b": "U018",
+        "confidence_score": 31.46,
+        "independent_episodes": 10,
+        "days": 4,
+        "typical_episode_quality": 0.2328,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U025",
+        "confidence_score": 31.01,
+        "independent_episodes": 7,
+        "days": 4,
+        "typical_episode_quality": 0.2265,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U004",
+        "mover_b": "U005",
+        "confidence_score": 25.94,
+        "independent_episodes": 4,
+        "days": 4,
+        "typical_episode_quality": 0.2087,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      }
+    ]
+  },
+  {
+    "dataset": "severe",
+    "split": [
+      0,
+      3
+    ],
+    "config": {
+      "model": "B",
+      "radius": 100,
+      "bias_floor": 30,
+      "crowd_radius": 400,
+      "gap_s": 600
+    },
+    "metrics": {
+      "tp": 0,
+      "fp": 1,
+      "fn": 4,
+      "precision": 0.0,
+      "recall": 0.0,
+      "false_positive_rate": 0.0020325203252032522,
+      "accepted_pairs": [
+        [
+          "U010",
+          "U012"
+        ]
+      ]
+    },
+    "scores": [
+      {
+        "mover_a": "U010",
+        "mover_b": "U012",
+        "confidence_score": 84.62,
+        "independent_episodes": 5,
+        "days": 4,
+        "typical_episode_quality": 0.5087,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U022",
+        "mover_b": "U024",
+        "confidence_score": 71.42,
+        "independent_episodes": 11,
+        "days": 4,
+        "typical_episode_quality": 0.3693,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U014",
+        "mover_b": "U016",
+        "confidence_score": 69.72,
+        "independent_episodes": 9,
+        "days": 4,
+        "typical_episode_quality": 0.3934,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U016",
+        "mover_b": "U018",
+        "confidence_score": 67.13,
+        "independent_episodes": 10,
+        "days": 4,
+        "typical_episode_quality": 0.3811,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U026",
+        "confidence_score": 63.44,
+        "independent_episodes": 16,
+        "days": 4,
+        "typical_episode_quality": 0.3079,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U016",
+        "mover_b": "U017",
+        "confidence_score": 48.72,
+        "independent_episodes": 9,
+        "days": 4,
+        "typical_episode_quality": 0.3043,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U000",
+        "mover_b": "U001",
+        "confidence_score": 44.36,
+        "independent_episodes": 18,
+        "days": 4,
+        "typical_episode_quality": 0.238,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U025",
+        "confidence_score": 38.44,
+        "independent_episodes": 10,
+        "days": 4,
+        "typical_episode_quality": 0.2342,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U012",
+        "mover_b": "U013",
+        "confidence_score": 33.56,
+        "independent_episodes": 5,
+        "days": 4,
+        "typical_episode_quality": 0.2412,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U004",
+        "mover_b": "U005",
+        "confidence_score": 30.89,
+        "independent_episodes": 7,
+        "days": 4,
+        "typical_episode_quality": 0.2291,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U013",
+        "confidence_score": 23.63,
+        "independent_episodes": 4,
+        "days": 3,
+        "typical_episode_quality": 0.2183,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U014",
+        "mover_b": "U018",
+        "confidence_score": 19.97,
+        "independent_episodes": 7,
+        "days": 4,
+        "typical_episode_quality": 0.176,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      }
+    ]
+  },
+  {
+    "dataset": "severe",
+    "split": [
+      0,
+      3
+    ],
+    "config": {
+      "model": "C",
+      "radius": 100,
+      "bias_floor": 30,
+      "crowd_radius": 400,
+      "gap_s": 600
+    },
+    "metrics": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 4,
+      "precision": null,
+      "recall": 0.0,
+      "false_positive_rate": 0.0,
+      "accepted_pairs": []
+    },
+    "scores": [
+      {
+        "mover_a": "U000",
+        "mover_b": "U001",
+        "confidence_score": 44.36,
+        "independent_episodes": 18,
+        "days": 4,
+        "typical_episode_quality": 0.238,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U004",
+        "mover_b": "U005",
+        "confidence_score": 30.89,
+        "independent_episodes": 7,
+        "days": 4,
+        "typical_episode_quality": 0.2291,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U012",
+        "confidence_score": 18.89,
+        "independent_episodes": 5,
+        "days": 4,
+        "typical_episode_quality": 0.1778,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U012",
+        "mover_b": "U013",
+        "confidence_score": 6.47,
+        "independent_episodes": 5,
+        "days": 4,
+        "typical_episode_quality": 0.096,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U020",
+        "mover_b": "U021",
+        "confidence_score": 6.3,
+        "independent_episodes": 6,
+        "days": 3,
+        "typical_episode_quality": 0.1175,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U014",
+        "mover_b": "U016",
+        "confidence_score": 6.11,
+        "independent_episodes": 9,
+        "days": 4,
+        "typical_episode_quality": 0.0917,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U026",
+        "confidence_score": 6.11,
+        "independent_episodes": 16,
+        "days": 4,
+        "typical_episode_quality": 0.0631,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U022",
+        "mover_b": "U024",
+        "confidence_score": 5.84,
+        "independent_episodes": 11,
+        "days": 4,
+        "typical_episode_quality": 0.0739,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U016",
+        "mover_b": "U018",
+        "confidence_score": 4.9,
+        "independent_episodes": 10,
+        "days": 4,
+        "typical_episode_quality": 0.0801,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U016",
+        "mover_b": "U017",
+        "confidence_score": 3.78,
+        "independent_episodes": 9,
+        "days": 4,
+        "typical_episode_quality": 0.0702,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U013",
+        "confidence_score": 3.53,
+        "independent_episodes": 4,
+        "days": 3,
+        "typical_episode_quality": 0.0728,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U025",
+        "confidence_score": 2.83,
+        "independent_episodes": 10,
+        "days": 4,
+        "typical_episode_quality": 0.0505,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      }
+    ]
+  },
+  {
+    "dataset": "severe",
+    "split": [
+      0,
+      3
+    ],
+    "config": {
+      "model": "C",
+      "radius": 150,
+      "bias_floor": 30,
+      "crowd_radius": 400,
+      "gap_s": 600
+    },
+    "metrics": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 2,
+      "precision": 1.0,
+      "recall": 0.5,
+      "false_positive_rate": 0.0,
+      "accepted_pairs": [
+        [
+          "U000",
+          "U001"
+        ],
+        [
+          "U004",
+          "U005"
+        ]
+      ]
+    },
+    "scores": [
+      {
+        "mover_a": "U000",
+        "mover_b": "U001",
+        "confidence_score": 96.95,
+        "independent_episodes": 18,
+        "days": 4,
+        "typical_episode_quality": 0.4528,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U004",
+        "mover_b": "U005",
+        "confidence_score": 83.6,
+        "independent_episodes": 7,
+        "days": 4,
+        "typical_episode_quality": 0.4498,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U012",
+        "confidence_score": 38.7,
+        "independent_episodes": 5,
+        "days": 4,
+        "typical_episode_quality": 0.2757,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U012",
+        "mover_b": "U013",
+        "confidence_score": 16.26,
+        "independent_episodes": 5,
+        "days": 4,
+        "typical_episode_quality": 0.1563,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U022",
+        "mover_b": "U024",
+        "confidence_score": 15.33,
+        "independent_episodes": 11,
+        "days": 4,
+        "typical_episode_quality": 0.1322,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U014",
+        "mover_b": "U016",
+        "confidence_score": 14.63,
+        "independent_episodes": 9,
+        "days": 4,
+        "typical_episode_quality": 0.1486,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U026",
+        "confidence_score": 12.93,
+        "independent_episodes": 16,
+        "days": 4,
+        "typical_episode_quality": 0.0958,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U016",
+        "mover_b": "U018",
+        "confidence_score": 12.07,
+        "independent_episodes": 10,
+        "days": 4,
+        "typical_episode_quality": 0.1343,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U016",
+        "mover_b": "U017",
+        "confidence_score": 11.02,
+        "independent_episodes": 9,
+        "days": 4,
+        "typical_episode_quality": 0.1254,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U013",
+        "confidence_score": 10.12,
+        "independent_episodes": 5,
+        "days": 4,
+        "typical_episode_quality": 0.1221,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U025",
+        "confidence_score": 8.24,
+        "independent_episodes": 10,
+        "days": 4,
+        "typical_episode_quality": 0.0886,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U020",
+        "mover_b": "U021",
+        "confidence_score": 7.1,
+        "independent_episodes": 13,
+        "days": 4,
+        "typical_episode_quality": 0.0841,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      }
+    ]
+  },
+  {
+    "dataset": "severe",
+    "split": [
+      0,
+      3
+    ],
+    "config": {
+      "model": "C",
+      "radius": 200,
+      "bias_floor": 30,
+      "crowd_radius": 650,
+      "gap_s": 600
+    },
+    "metrics": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 2,
+      "precision": 1.0,
+      "recall": 0.5,
+      "false_positive_rate": 0.0,
+      "accepted_pairs": [
+        [
+          "U000",
+          "U001"
+        ],
+        [
+          "U004",
+          "U005"
+        ]
+      ]
+    },
+    "scores": [
+      {
+        "mover_a": "U000",
+        "mover_b": "U001",
+        "confidence_score": 99.36,
+        "independent_episodes": 18,
+        "days": 4,
+        "typical_episode_quality": 0.6554,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U004",
+        "mover_b": "U005",
+        "confidence_score": 92.96,
+        "independent_episodes": 7,
+        "days": 4,
+        "typical_episode_quality": 0.6726,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U012",
+        "confidence_score": 47.09,
+        "independent_episodes": 5,
+        "days": 4,
+        "typical_episode_quality": 0.3175,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U012",
+        "mover_b": "U013",
+        "confidence_score": 24.69,
+        "independent_episodes": 5,
+        "days": 4,
+        "typical_episode_quality": 0.2003,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U020",
+        "mover_b": "U021",
+        "confidence_score": 21.39,
+        "independent_episodes": 16,
+        "days": 4,
+        "typical_episode_quality": 0.17,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U014",
+        "mover_b": "U016",
+        "confidence_score": 17.69,
+        "independent_episodes": 9,
+        "days": 4,
+        "typical_episode_quality": 0.1638,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U016",
+        "mover_b": "U017",
+        "confidence_score": 17.38,
+        "independent_episodes": 9,
+        "days": 4,
+        "typical_episode_quality": 0.1613,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U013",
+        "confidence_score": 17.06,
+        "independent_episodes": 5,
+        "days": 4,
+        "typical_episode_quality": 0.1713,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U016",
+        "mover_b": "U018",
+        "confidence_score": 16.55,
+        "independent_episodes": 10,
+        "days": 4,
+        "typical_episode_quality": 0.16,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U022",
+        "mover_b": "U024",
+        "confidence_score": 14.96,
+        "independent_episodes": 11,
+        "days": 4,
+        "typical_episode_quality": 0.1156,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U026",
+        "confidence_score": 14.34,
+        "independent_episodes": 16,
+        "days": 4,
+        "typical_episode_quality": 0.1003,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U002",
+        "mover_b": "U003",
+        "confidence_score": 12.91,
+        "independent_episodes": 4,
+        "days": 3,
+        "typical_episode_quality": 0.1458,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      }
+    ]
+  },
+  {
+    "dataset": "severe",
+    "split": [
+      0,
+      3
+    ],
+    "config": {
+      "model": "C",
+      "radius": 150,
+      "bias_floor": 60,
+      "crowd_radius": 650,
+      "gap_s": 600
+    },
+    "metrics": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 4,
+      "precision": null,
+      "recall": 0.0,
+      "false_positive_rate": 0.0,
+      "accepted_pairs": []
+    },
+    "scores": [
+      {
+        "mover_a": "U000",
+        "mover_b": "U001",
+        "confidence_score": 72.78,
+        "independent_episodes": 18,
+        "days": 4,
+        "typical_episode_quality": 0.3513,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U004",
+        "mover_b": "U005",
+        "confidence_score": 59.7,
+        "independent_episodes": 7,
+        "days": 4,
+        "typical_episode_quality": 0.355,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U012",
+        "confidence_score": 19.24,
+        "independent_episodes": 5,
+        "days": 4,
+        "typical_episode_quality": 0.1825,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U020",
+        "mover_b": "U021",
+        "confidence_score": 8.48,
+        "independent_episodes": 15,
+        "days": 4,
+        "typical_episode_quality": 0.1,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U012",
+        "mover_b": "U013",
+        "confidence_score": 8.42,
+        "independent_episodes": 5,
+        "days": 4,
+        "typical_episode_quality": 0.1073,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U014",
+        "mover_b": "U016",
+        "confidence_score": 6.3,
+        "independent_episodes": 9,
+        "days": 4,
+        "typical_episode_quality": 0.0913,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U026",
+        "confidence_score": 5.92,
+        "independent_episodes": 10,
+        "days": 4,
+        "typical_episode_quality": 0.073,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U016",
+        "mover_b": "U017",
+        "confidence_score": 5.86,
+        "independent_episodes": 9,
+        "days": 4,
+        "typical_episode_quality": 0.0876,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U016",
+        "mover_b": "U018",
+        "confidence_score": 5.8,
+        "independent_episodes": 10,
+        "days": 4,
+        "typical_episode_quality": 0.0888,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U013",
+        "confidence_score": 5.63,
+        "independent_episodes": 5,
+        "days": 4,
+        "typical_episode_quality": 0.0923,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U022",
+        "mover_b": "U024",
+        "confidence_score": 4.74,
+        "independent_episodes": 11,
+        "days": 4,
+        "typical_episode_quality": 0.0625,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U002",
+        "mover_b": "U003",
+        "confidence_score": 4.22,
+        "independent_episodes": 4,
+        "days": 3,
+        "typical_episode_quality": 0.0792,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      }
+    ]
+  },
+  {
+    "dataset": "severe",
+    "split": [
+      0,
+      3
+    ],
+    "config": {
+      "model": "C",
+      "radius": 200,
+      "bias_floor": 60,
+      "crowd_radius": 650,
+      "gap_s": 600
+    },
+    "metrics": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 2,
+      "precision": 1.0,
+      "recall": 0.5,
+      "false_positive_rate": 0.0,
+      "accepted_pairs": [
+        [
+          "U000",
+          "U001"
+        ],
+        [
+          "U004",
+          "U005"
+        ]
+      ]
+    },
+    "scores": [
+      {
+        "mover_a": "U000",
+        "mover_b": "U001",
+        "confidence_score": 98.35,
+        "independent_episodes": 18,
+        "days": 4,
+        "typical_episode_quality": 0.5364,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U004",
+        "mover_b": "U005",
+        "confidence_score": 88.5,
+        "independent_episodes": 7,
+        "days": 4,
+        "typical_episode_quality": 0.5464,
+        "accepted": true,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U012",
+        "confidence_score": 32.86,
+        "independent_episodes": 5,
+        "days": 4,
+        "typical_episode_quality": 0.2524,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U012",
+        "mover_b": "U013",
+        "confidence_score": 17.43,
+        "independent_episodes": 5,
+        "days": 4,
+        "typical_episode_quality": 0.1625,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U020",
+        "mover_b": "U021",
+        "confidence_score": 16.8,
+        "independent_episodes": 12,
+        "days": 4,
+        "typical_episode_quality": 0.1558,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U010",
+        "mover_b": "U013",
+        "confidence_score": 11.96,
+        "independent_episodes": 5,
+        "days": 4,
+        "typical_episode_quality": 0.1392,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U014",
+        "mover_b": "U016",
+        "confidence_score": 11.83,
+        "independent_episodes": 9,
+        "days": 4,
+        "typical_episode_quality": 0.1295,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U016",
+        "mover_b": "U017",
+        "confidence_score": 11.68,
+        "independent_episodes": 9,
+        "days": 4,
+        "typical_episode_quality": 0.1282,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U024",
+        "mover_b": "U026",
+        "confidence_score": 11.14,
+        "independent_episodes": 10,
+        "days": 4,
+        "typical_episode_quality": 0.1053,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U016",
+        "mover_b": "U018",
+        "confidence_score": 10.95,
+        "independent_episodes": 10,
+        "days": 4,
+        "typical_episode_quality": 0.1265,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U002",
+        "mover_b": "U003",
+        "confidence_score": 10.86,
+        "independent_episodes": 4,
+        "days": 3,
+        "typical_episode_quality": 0.1324,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      },
+      {
+        "mover_a": "U022",
+        "mover_b": "U024",
+        "confidence_score": 8.74,
+        "independent_episodes": 11,
+        "days": 4,
+        "typical_episode_quality": 0.0878,
+        "accepted": false,
+        "confidence_kind": "heuristic_evidence",
+        "calibration_status": "uncalibrated"
+      }
+    ]
+  }
+]

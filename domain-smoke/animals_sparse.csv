@@ -1,0 +1,15 @@
+source,entity,deployment,tag,time,longitude,latitude,altitude_m,h_sigma_m,v_sigma_m,quality_class,time_basis,altitude_datum,calibration
+animals,holdout_animals_0_0,holdout_animals_0_0_deployment,reused_tag,-0.6214519951334914,-110.00025245600963,47.000161060582926,,8,,high,measurement_UTC,,fixture_gaussian_sigma_with_bias_floor
+animals,holdout_animals_0_1,holdout_animals_0_1_deployment,holdout_animals_0_1,0.6014576027230361,-109.99997220476004,47.000160557359365,,8,,high,measurement_UTC,,fixture_gaussian_sigma_with_bias_floor
+animals,holdout_animals_1_0,holdout_animals_1_0_deployment,reused_tag,0.4483831526329511,-109.99991072662208,48.49990103326509,,8,,high,measurement_UTC,,fixture_gaussian_sigma_with_bias_floor
+animals,holdout_animals_1_1,holdout_animals_1_1_deployment,holdout_animals_1_1,0.3047426511851576,-109.99992215634232,48.50727459085626,,8,,high,measurement_UTC,,fixture_gaussian_sigma_with_bias_floor
+animals,holdout_animals_2_0,holdout_animals_2_0_deployment,reused_tag,-0.4399342753812767,-109.99978194044589,49.99995681799956,,8,,high,measurement_UTC,,fixture_gaussian_sigma_with_bias_floor
+animals,holdout_animals_2_1,holdout_animals_2_1_deployment,holdout_animals_2_1,-0.7428065723570125,-109.94949372932932,49.967565808203815,,8,,high,measurement_UTC,,fixture_gaussian_sigma_with_bias_floor
+animals,holdout_animals_3_0,holdout_animals_3_0_deployment,reused_tag,-0.0177637710884071,-110.00004738078384,51.49999974543896,,8,,high,measurement_UTC,,fixture_gaussian_sigma_with_bias_floor
+animals,holdout_animals_3_1,holdout_animals_3_1_deployment,holdout_animals_3_1,-0.4097748104206162,-110.000008917838,51.50016338533999,,8,,high,measurement_UTC,,fixture_gaussian_sigma_with_bias_floor
+animals,holdout_animals_3_2,holdout_animals_3_2_deployment,holdout_animals_3_2,0.5032821710279629,-110.00005335058772,51.50015363517474,,8,,high,measurement_UTC,,fixture_gaussian_sigma_with_bias_floor
+animals,holdout_animals_3_3,holdout_animals_3_3_deployment,holdout_animals_3_3,-0.6465083858263498,-109.9998502485818,51.500137798517386,,8,,high,measurement_UTC,,fixture_gaussian_sigma_with_bias_floor
+animals,holdout_animals_3_4,holdout_animals_3_4_deployment,holdout_animals_3_4,0.0109471073409894,-109.99982786036944,51.500325459365975,,8,,high,measurement_UTC,,fixture_gaussian_sigma_with_bias_floor
+animals,holdout_animals_3_5,holdout_animals_3_5_deployment,holdout_animals_3_5,0.8120025609709511,-110.0001702337725,51.50051316929896,,8,,high,measurement_UTC,,fixture_gaussian_sigma_with_bias_floor
+animals,holdout_animals_4_0,holdout_animals_4_0_deployment,reused_tag,0.5249306464543573,-109.9998827947974,52.999910362066295,,8,,high,measurement_UTC,,fixture_gaussian_sigma_with_bias_floor
+animals,holdout_animals_4_1,holdout_animals_4_1_deployment,holdout_animals_4_1,0.7716080216563752,-109.97300761277754,52.999663761497615,,8,,high,measurement_UTC,,fixture_gaussian_sigma_with_bias_floor

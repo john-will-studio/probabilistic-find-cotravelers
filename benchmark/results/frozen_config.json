@@ -1,0 +1,7 @@
+{
+  "model": "C",
+  "radius": 150,
+  "bias_floor": 30,
+  "crowd_radius": 400,
+  "gap_s": 600
+}

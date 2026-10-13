@@ -1,0 +1,110 @@
+[
+  {
+    "dataset": "animals_moderate_development",
+    "rows": 1614,
+    "entities": 14,
+    "median_cadence_s": 30.0,
+    "p95_cadence_s": 30.000000000000057,
+    "sigma_m": 8.0,
+    "dateline_crossed": false
+  },
+  {
+    "dataset": "animals_severe_development",
+    "rows": 1079,
+    "entities": 14,
+    "median_cadence_s": 30.0,
+    "p95_cadence_s": 90.0,
+    "sigma_m": 30.0,
+    "dateline_crossed": false
+  },
+  {
+    "dataset": "boats_moderate_development",
+    "rows": 3201,
+    "entities": 14,
+    "median_cadence_s": 15.0,
+    "p95_cadence_s": 15.000000000000114,
+    "sigma_m": 8.0,
+    "dateline_crossed": true
+  },
+  {
+    "dataset": "boats_severe_development",
+    "rows": 2179,
+    "entities": 14,
+    "median_cadence_s": 15.0,
+    "p95_cadence_s": 45.0,
+    "sigma_m": 30.0,
+    "dateline_crossed": true
+  },
+  {
+    "dataset": "aircraft_moderate_development",
+    "rows": 10925,
+    "entities": 16,
+    "median_cadence_s": 5.0,
+    "p95_cadence_s": 10.0,
+    "sigma_m": 8.0,
+    "dateline_crossed": false
+  },
+  {
+    "dataset": "aircraft_severe_development",
+    "rows": 7356,
+    "entities": 16,
+    "median_cadence_s": 5.0,
+    "p95_cadence_s": 15.0,
+    "sigma_m": 30.0,
+    "dateline_crossed": false
+  },
+  {
+    "dataset": "animals_moderate_holdout",
+    "rows": 1607,
+    "entities": 14,
+    "median_cadence_s": 30.0,
+    "p95_cadence_s": 30.000000000000114,
+    "sigma_m": 8.0,
+    "dateline_crossed": false
+  },
+  {
+    "dataset": "animals_severe_holdout",
+    "rows": 1078,
+    "entities": 14,
+    "median_cadence_s": 30.0,
+    "p95_cadence_s": 90.0,
+    "sigma_m": 30.0,
+    "dateline_crossed": false
+  },
+  {
+    "dataset": "boats_moderate_holdout",
+    "rows": 3179,
+    "entities": 14,
+    "median_cadence_s": 15.0,
+    "p95_cadence_s": 30.0,
+    "sigma_m": 8.0,
+    "dateline_crossed": true
+  },
+  {
+    "dataset": "boats_severe_holdout",
+    "rows": 2167,
+    "entities": 14,
+    "median_cadence_s": 15.0,
+    "p95_cadence_s": 45.0,
+    "sigma_m": 30.0,
+    "dateline_crossed": true
+  },
+  {
+    "dataset": "aircraft_moderate_holdout",
+    "rows": 10952,
+    "entities": 16,
+    "median_cadence_s": 5.0,
+    "p95_cadence_s": 5.000000000000227,
+    "sigma_m": 8.0,
+    "dateline_crossed": false
+  },
+  {
+    "dataset": "aircraft_severe_holdout",
+    "rows": 7397,
+    "entities": 16,
+    "median_cadence_s": 5.0,
+    "p95_cadence_s": 15.0,
+    "sigma_m": 30.0,
+    "dateline_crossed": false
+  }
+]

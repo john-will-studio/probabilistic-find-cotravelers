@@ -1,0 +1,716 @@
+{
+  "sources": [
+    {
+      "source_id": "severe_final.csv",
+      "sha256": "07d9b6c8cfe04d58a61e0593bfba7507583f9b05510b1db32b731b03b8278c5a",
+      "rows_raw": 34161,
+      "rows_valid": 34141,
+      "exact_duplicates_removed": 12,
+      "missingness": {
+        "mover_id": 0,
+        "timestamp": 0,
+        "longitude": 0,
+        "latitude": 1,
+        "error_radius_m": 0,
+        "error_probability": 0
+      },
+      "utc_hour_counts": {
+        "8": 8862,
+        "9": 8605,
+        "10": 8083,
+        "11": 8591
+      },
+      "error_radius_m": {
+        "p10": 35.0,
+        "p50": 90.0,
+        "p90": 300.0,
+        "p99": 623.6774234649371
+      },
+      "error_probabilities": [
+        0.5,
+        0.95
+      ]
+    }
+  ],
+  "movers": [
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U000",
+      "count": 2095,
+      "first_utc": "2026-09-07T08:00:21+00:00",
+      "last_utc": "2026-09-22T11:59:44+00:00",
+      "interval_s": {
+        "p10": 63.0,
+        "p50": 90.0,
+        "p90": 180.0,
+        "p99": 439.5600000000177
+      },
+      "error_radius_m": {
+        "p10": 50.93365624963653,
+        "p50": 72.76236607090934,
+        "p90": 109.143549106364,
+        "p99": 109.143549106364
+      },
+      "gaps_over_30min": 20,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U001",
+      "count": 1085,
+      "first_utc": "2026-09-07T08:00:07+00:00",
+      "last_utc": "2026-09-22T11:59:48+00:00",
+      "interval_s": {
+        "p10": 126.0,
+        "p50": 180.0,
+        "p90": 360.0,
+        "p99": 72120.85
+      },
+      "error_radius_m": {
+        "p10": 125.99999999999996,
+        "p50": 180.0,
+        "p90": 270.0,
+        "p99": 270.0
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U002",
+      "count": 659,
+      "first_utc": "2026-09-07T08:00:08+00:00",
+      "last_utc": "2026-09-22T11:57:05+00:00",
+      "interval_s": {
+        "p10": 210.0,
+        "p50": 300.0,
+        "p90": 600.0,
+        "p99": 72234.9
+      },
+      "error_radius_m": {
+        "p10": 62.99999999999999,
+        "p50": 90.0,
+        "p90": 135.0,
+        "p99": 135.0
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U003",
+      "count": 777,
+      "first_utc": "2026-09-07T08:00:13+00:00",
+      "last_utc": "2026-09-22T11:56:02+00:00",
+      "interval_s": {
+        "p10": 168.0,
+        "p50": 240.0,
+        "p90": 480.0,
+        "p99": 72295.0
+      },
+      "error_radius_m": {
+        "p10": 210.0,
+        "p50": 300.0,
+        "p90": 450.0,
+        "p99": 450.0
+      },
+      "gaps_over_30min": 20,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U004",
+      "count": 2186,
+      "first_utc": "2026-09-07T08:00:16+00:00",
+      "last_utc": "2026-09-22T11:58:58+00:00",
+      "interval_s": {
+        "p10": 63.0,
+        "p50": 90.0,
+        "p90": 180.0,
+        "p99": 342.0
+      },
+      "error_radius_m": {
+        "p10": 24.5,
+        "p50": 35.0,
+        "p90": 52.5,
+        "p99": 52.5
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U005",
+      "count": 1085,
+      "first_utc": "2026-09-07T08:03:07+00:00",
+      "last_utc": "2026-09-22T11:59:21+00:00",
+      "interval_s": {
+        "p10": 126.0,
+        "p50": 180.0,
+        "p90": 360.0,
+        "p99": 72043.36
+      },
+      "error_radius_m": {
+        "p10": 125.99999999999996,
+        "p50": 180.0,
+        "p90": 270.0,
+        "p99": 270.0
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U006",
+      "count": 630,
+      "first_utc": "2026-09-07T08:00:25+00:00",
+      "last_utc": "2026-09-22T11:42:56+00:00",
+      "interval_s": {
+        "p10": 210.0,
+        "p50": 300.0,
+        "p90": 600.0,
+        "p99": 72199.4
+      },
+      "error_radius_m": {
+        "p10": 62.99999999999999,
+        "p50": 90.0,
+        "p90": 135.0,
+        "p99": 135.0
+      },
+      "gaps_over_30min": 20,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U007",
+      "count": 822,
+      "first_utc": "2026-09-07T08:00:08+00:00",
+      "last_utc": "2026-09-22T11:57:12+00:00",
+      "interval_s": {
+        "p10": 168.0,
+        "p50": 240.0,
+        "p90": 480.0,
+        "p99": 72164.4
+      },
+      "error_radius_m": {
+        "p10": 436.574196425456,
+        "p50": 623.6774234649371,
+        "p90": 935.5161351974058,
+        "p99": 935.5161351974058
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U008",
+      "count": 2193,
+      "first_utc": "2026-09-07T08:01:55+00:00",
+      "last_utc": "2026-09-22T11:59:57+00:00",
+      "interval_s": {
+        "p10": 63.0,
+        "p50": 90.0,
+        "p90": 180.0,
+        "p99": 316.6200000000026
+      },
+      "error_radius_m": {
+        "p10": 24.5,
+        "p50": 35.0,
+        "p90": 52.5,
+        "p99": 52.5
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U009",
+      "count": 1040,
+      "first_utc": "2026-09-07T08:04:30+00:00",
+      "last_utc": "2026-09-22T11:58:34+00:00",
+      "interval_s": {
+        "p10": 126.0,
+        "p50": 180.0,
+        "p90": 360.0,
+        "p99": 72083.24
+      },
+      "error_radius_m": {
+        "p10": 125.99999999999996,
+        "p50": 180.0,
+        "p90": 270.0,
+        "p99": 270.0
+      },
+      "gaps_over_30min": 20,
+      "jumps_lower_speed_over_70mps": 34
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U010",
+      "count": 664,
+      "first_utc": "2026-09-07T08:00:10+00:00",
+      "last_utc": "2026-09-22T11:55:12+00:00",
+      "interval_s": {
+        "p10": 210.0,
+        "p50": 300.0,
+        "p90": 600.0,
+        "p99": 72194.88
+      },
+      "error_radius_m": {
+        "p10": 62.99999999999999,
+        "p50": 90.0,
+        "p90": 135.0,
+        "p99": 135.0
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U011",
+      "count": 825,
+      "first_utc": "2026-09-07T08:00:14+00:00",
+      "last_utc": "2026-09-22T11:58:05+00:00",
+      "interval_s": {
+        "p10": 168.0,
+        "p50": 240.0,
+        "p90": 480.0,
+        "p99": 72169.58
+      },
+      "error_radius_m": {
+        "p10": 210.0,
+        "p50": 300.0,
+        "p90": 450.0,
+        "p99": 450.0
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U012",
+      "count": 2073,
+      "first_utc": "2026-09-07T08:01:52+00:00",
+      "last_utc": "2026-09-22T11:59:54+00:00",
+      "interval_s": {
+        "p10": 63.0,
+        "p50": 90.0,
+        "p90": 180.0,
+        "p99": 422.0999999999967
+      },
+      "error_radius_m": {
+        "p10": 24.5,
+        "p50": 35.0,
+        "p90": 52.5,
+        "p99": 52.5
+      },
+      "gaps_over_30min": 20,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U013",
+      "count": 1086,
+      "first_utc": "2026-09-07T08:00:12+00:00",
+      "last_utc": "2026-09-22T11:58:04+00:00",
+      "interval_s": {
+        "p10": 126.0,
+        "p50": 180.0,
+        "p90": 360.0,
+        "p99": 72143.32
+      },
+      "error_radius_m": {
+        "p10": 125.99999999999996,
+        "p50": 180.0,
+        "p90": 270.0,
+        "p99": 270.0
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U014",
+      "count": 674,
+      "first_utc": "2026-09-07T08:00:21+00:00",
+      "last_utc": "2026-09-22T11:46:22+00:00",
+      "interval_s": {
+        "p10": 210.0,
+        "p50": 300.0,
+        "p90": 582.0000000000061,
+        "p99": 72114.36
+      },
+      "error_radius_m": {
+        "p10": 130.97225892763677,
+        "p50": 187.1032270394811,
+        "p90": 280.6548405592217,
+        "p99": 280.6548405592217
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U015",
+      "count": 776,
+      "first_utc": "2026-09-07T08:00:28+00:00",
+      "last_utc": "2026-09-22T11:57:28+00:00",
+      "interval_s": {
+        "p10": 168.0,
+        "p50": 240.0,
+        "p90": 480.0,
+        "p99": 72162.24
+      },
+      "error_radius_m": {
+        "p10": 210.0,
+        "p50": 300.0,
+        "p90": 450.0,
+        "p99": 450.0
+      },
+      "gaps_over_30min": 20,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U016",
+      "count": 2143,
+      "first_utc": "2026-09-07T08:00:09+00:00",
+      "last_utc": "2026-09-22T11:58:50+00:00",
+      "interval_s": {
+        "p10": 63.0,
+        "p50": 90.0,
+        "p90": 180.0,
+        "p99": 352.6200000000026
+      },
+      "error_radius_m": {
+        "p10": 24.5,
+        "p50": 35.0,
+        "p90": 52.5,
+        "p99": 52.5
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 19
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U017",
+      "count": 1094,
+      "first_utc": "2026-09-07T08:00:24+00:00",
+      "last_utc": "2026-09-22T11:57:36+00:00",
+      "interval_s": {
+        "p10": 126.0,
+        "p50": 180.0,
+        "p90": 360.0,
+        "p99": 72051.32
+      },
+      "error_radius_m": {
+        "p10": 125.99999999999996,
+        "p50": 180.0,
+        "p90": 270.0,
+        "p99": 270.0
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U018",
+      "count": 626,
+      "first_utc": "2026-09-07T08:00:27+00:00",
+      "last_utc": "2026-09-22T11:57:00+00:00",
+      "interval_s": {
+        "p10": 210.0,
+        "p50": 300.0,
+        "p90": 600.0,
+        "p99": 72211.8
+      },
+      "error_radius_m": {
+        "p10": 62.99999999999999,
+        "p50": 90.0,
+        "p90": 135.0,
+        "p99": 135.0
+      },
+      "gaps_over_30min": 20,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U019",
+      "count": 805,
+      "first_utc": "2026-09-07T08:00:06+00:00",
+      "last_utc": "2026-09-22T11:57:08+00:00",
+      "interval_s": {
+        "p10": 168.0,
+        "p50": 240.0,
+        "p90": 480.0,
+        "p99": 72235.98
+      },
+      "error_radius_m": {
+        "p10": 210.0,
+        "p50": 300.0,
+        "p90": 450.0,
+        "p99": 450.0
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U020",
+      "count": 2131,
+      "first_utc": "2026-09-07T08:00:18+00:00",
+      "last_utc": "2026-09-22T11:59:37+00:00",
+      "interval_s": {
+        "p10": 63.0,
+        "p50": 90.0,
+        "p90": 180.0,
+        "p99": 402.3900000000003
+      },
+      "error_radius_m": {
+        "p10": 24.5,
+        "p50": 35.0,
+        "p90": 52.5,
+        "p99": 52.5
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U021",
+      "count": 1019,
+      "first_utc": "2026-09-07T08:00:13+00:00",
+      "last_utc": "2026-09-22T11:57:12+00:00",
+      "interval_s": {
+        "p10": 126.0,
+        "p50": 180.0,
+        "p90": 360.0,
+        "p99": 72116.77
+      },
+      "error_radius_m": {
+        "p10": 261.94451785527355,
+        "p50": 374.2064540789622,
+        "p90": 561.3096811184435,
+        "p99": 561.3096811184435
+      },
+      "gaps_over_30min": 20,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U022",
+      "count": 653,
+      "first_utc": "2026-09-07T08:00:00+00:00",
+      "last_utc": "2026-09-22T11:55:43+00:00",
+      "interval_s": {
+        "p10": 210.0,
+        "p50": 300.0,
+        "p90": 600.0,
+        "p99": 72210.86
+      },
+      "error_radius_m": {
+        "p10": 62.99999999999999,
+        "p50": 90.0,
+        "p90": 135.0,
+        "p99": 135.0
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U023",
+      "count": 797,
+      "first_utc": "2026-09-07T08:00:03+00:00",
+      "last_utc": "2026-09-22T11:58:57+00:00",
+      "interval_s": {
+        "p10": 168.0,
+        "p50": 240.0,
+        "p90": 480.0,
+        "p99": 72192.35
+      },
+      "error_radius_m": {
+        "p10": 210.0,
+        "p50": 300.0,
+        "p90": 450.0,
+        "p99": 450.0
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U024",
+      "count": 2073,
+      "first_utc": "2026-09-07T08:00:13+00:00",
+      "last_utc": "2026-09-22T11:59:35+00:00",
+      "interval_s": {
+        "p10": 63.0,
+        "p50": 90.0,
+        "p90": 180.0,
+        "p99": 414.2699999999977
+      },
+      "error_radius_m": {
+        "p10": 24.5,
+        "p50": 35.0,
+        "p90": 52.5,
+        "p99": 52.5
+      },
+      "gaps_over_30min": 20,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U025",
+      "count": 1092,
+      "first_utc": "2026-09-07T08:00:07+00:00",
+      "last_utc": "2026-09-22T11:56:10+00:00",
+      "interval_s": {
+        "p10": 126.0,
+        "p50": 180.0,
+        "p90": 360.0,
+        "p99": 72081.2
+      },
+      "error_radius_m": {
+        "p10": 125.99999999999996,
+        "p50": 180.0,
+        "p90": 270.0,
+        "p99": 270.0
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U026",
+      "count": 654,
+      "first_utc": "2026-09-07T08:00:28+00:00",
+      "last_utc": "2026-09-22T11:55:49+00:00",
+      "interval_s": {
+        "p10": 210.0,
+        "p50": 300.0,
+        "p90": 600.0,
+        "p99": 72178.4
+      },
+      "error_radius_m": {
+        "p10": 62.99999999999999,
+        "p50": 90.0,
+        "p90": 135.0,
+        "p99": 135.0
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U027",
+      "count": 790,
+      "first_utc": "2026-09-07T08:00:06+00:00",
+      "last_utc": "2026-09-22T11:51:25+00:00",
+      "interval_s": {
+        "p10": 168.0,
+        "p50": 240.0,
+        "p90": 480.0,
+        "p99": 72172.68
+      },
+      "error_radius_m": {
+        "p10": 210.0,
+        "p50": 300.0,
+        "p90": 450.0,
+        "p99": 450.0
+      },
+      "gaps_over_30min": 20,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U028",
+      "count": 90,
+      "first_utc": "2026-09-07T08:00:15+00:00",
+      "last_utc": "2026-09-22T11:40:23+00:00",
+      "interval_s": {
+        "p10": 1680.0,
+        "p50": 2400.0,
+        "p90": 73974.4,
+        "p99": 76211.48000000001
+      },
+      "error_radius_m": {
+        "p10": 50.93365624963653,
+        "p50": 72.76236607090934,
+        "p90": 109.143549106364,
+        "p99": 109.143549106364
+      },
+      "gaps_over_30min": 71,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U029",
+      "count": 84,
+      "first_utc": "2026-09-07T08:00:20+00:00",
+      "last_utc": "2026-09-22T11:52:11+00:00",
+      "interval_s": {
+        "p10": 1680.0,
+        "p50": 2400.0,
+        "p90": 74098.6,
+        "p99": 78049.24
+      },
+      "error_radius_m": {
+        "p10": 125.99999999999996,
+        "p50": 180.0,
+        "p90": 270.0,
+        "p99": 270.0
+      },
+      "gaps_over_30min": 72,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U030",
+      "count": 610,
+      "first_utc": "2026-09-07T08:00:20+00:00",
+      "last_utc": "2026-09-22T11:57:30+00:00",
+      "interval_s": {
+        "p10": 210.0,
+        "p50": 300.0,
+        "p90": 606.0000000000014,
+        "p99": 72249.04
+      },
+      "error_radius_m": {
+        "p10": 62.99999999999999,
+        "p50": 90.0,
+        "p90": 135.0,
+        "p99": 135.0
+      },
+      "gaps_over_30min": 20,
+      "jumps_lower_speed_over_70mps": 0
+    },
+    {
+      "source_id": "severe_final.csv",
+      "mover_id": "U031",
+      "count": 810,
+      "first_utc": "2026-09-07T08:00:10+00:00",
+      "last_utc": "2026-09-22T11:57:36+00:00",
+      "interval_s": {
+        "p10": 168.0,
+        "p50": 240.0,
+        "p90": 480.0,
+        "p99": 72186.4
+      },
+      "error_radius_m": {
+        "p10": 210.0,
+        "p50": 300.0,
+        "p90": 450.0,
+        "p99": 450.0
+      },
+      "gaps_over_30min": 15,
+      "jumps_lower_speed_over_70mps": 0
+    }
+  ],
+  "rejected_rows": 8,
+  "crs": "EPSG:4326",
+  "timestamp_timezone": "UTC",
+  "origin": [
+    -76.99920743187272,
+    39.046617389878904
+  ]
+}

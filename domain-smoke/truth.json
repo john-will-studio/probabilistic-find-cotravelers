@@ -1,0 +1,74 @@
+{
+  "animals_moderate_development": [
+    [
+      "development_animals_0_0",
+      "development_animals_0_1"
+    ]
+  ],
+  "animals_severe_development": [
+    [
+      "development_animals_0_0",
+      "development_animals_0_1"
+    ]
+  ],
+  "boats_moderate_development": [
+    [
+      "development_boats_0_0",
+      "development_boats_0_1"
+    ]
+  ],
+  "boats_severe_development": [
+    [
+      "development_boats_0_0",
+      "development_boats_0_1"
+    ]
+  ],
+  "aircraft_moderate_development": [
+    [
+      "development_aircraft_0_0",
+      "development_aircraft_0_1"
+    ]
+  ],
+  "aircraft_severe_development": [
+    [
+      "development_aircraft_0_0",
+      "development_aircraft_0_1"
+    ]
+  ],
+  "animals_moderate_holdout": [
+    [
+      "holdout_animals_0_0",
+      "holdout_animals_0_1"
+    ]
+  ],
+  "animals_severe_holdout": [
+    [
+      "holdout_animals_0_0",
+      "holdout_animals_0_1"
+    ]
+  ],
+  "boats_moderate_holdout": [
+    [
+      "holdout_boats_0_0",
+      "holdout_boats_0_1"
+    ]
+  ],
+  "boats_severe_holdout": [
+    [
+      "holdout_boats_0_0",
+      "holdout_boats_0_1"
+    ]
+  ],
+  "aircraft_moderate_holdout": [
+    [
+      "holdout_aircraft_0_0",
+      "holdout_aircraft_0_1"
+    ]
+  ],
+  "aircraft_severe_holdout": [
+    [
+      "holdout_aircraft_0_0",
+      "holdout_aircraft_0_1"
+    ]
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mover Associations"
+  short_description: "Adapt tracking data to rank shared movement evidence"
+  default_prompt: "Use $score-mover-associations to assess this tracking domain, adapt the analysis, and export supported associations."

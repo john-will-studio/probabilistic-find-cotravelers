@@ -1,0 +1,67 @@
+[
+  {
+    "case": "boats_missing_h_sigma_m",
+    "passed": true,
+    "reason": "uncalibrated horizontal uncertainty"
+  },
+  {
+    "case": "aircraft_missing_altitude_m",
+    "passed": true,
+    "reason": "unresolved vertical separation"
+  },
+  {
+    "case": "invalid_altitude_datum",
+    "passed": true,
+    "reason": "unresolved vertical separation"
+  },
+  {
+    "case": "invalid_calibration",
+    "passed": true,
+    "reason": "unsupported uncertainty calibration"
+  },
+  {
+    "case": "invalid_time_basis",
+    "passed": true,
+    "reason": "unresolved observation time"
+  },
+  {
+    "case": "invalid_h_sigma_m",
+    "passed": true,
+    "reason": "uncalibrated horizontal uncertainty"
+  },
+  {
+    "case": "invalid_v_sigma_m",
+    "passed": true,
+    "reason": "vertical uncertainty excludes close association"
+  },
+  {
+    "case": "sparse_animals",
+    "passed": true,
+    "reason": "insufficient temporal support"
+  },
+  {
+    "case": "reused_tags",
+    "passed": true,
+    "reason": "Separate fixture deployment identities retained; no tag-only joins"
+  },
+  {
+    "case": "aggregate_heatmap",
+    "passed": true,
+    "reason": "missing individual identities or observation times"
+  },
+  {
+    "case": "dateline_distance",
+    "passed": true,
+    "reason": "Wrapped spherical distance reference"
+  },
+  {
+    "case": "MGRS_reference",
+    "passed": true,
+    "reason": "Known Eiffel Tower reference; full global grid not certified"
+  },
+  {
+    "case": "polar_grid",
+    "passed": true,
+    "reason": "Explicit refusal; UPS not implemented"
+  }
+]

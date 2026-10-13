@@ -1,0 +1,59 @@
+{
+  "model": "C",
+  "radius_m": 150,
+  "bias_floor_m": 30,
+  "crowd_radius_m": 400,
+  "max_gap_s": 600,
+  "window_s": 900,
+  "version": "1.0",
+  "sources": [
+    {
+      "source_id": "severe_final.csv",
+      "sha256": "07d9b6c8cfe04d58a61e0593bfba7507583f9b05510b1db32b731b03b8278c5a",
+      "rows_raw": 34161,
+      "rows_valid": 34141,
+      "exact_duplicates_removed": 12,
+      "missingness": {
+        "mover_id": 0,
+        "timestamp": 0,
+        "longitude": 0,
+        "latitude": 1,
+        "error_radius_m": 0,
+        "error_probability": 0
+      },
+      "utc_hour_counts": {
+        "8": 8862,
+        "9": 8605,
+        "10": 8083,
+        "11": 8591
+      },
+      "error_radius_m": {
+        "p10": 35.0,
+        "p50": 90.0,
+        "p90": 300.0,
+        "p99": 623.6774234649371
+      },
+      "error_probabilities": [
+        0.5,
+        0.95
+      ]
+    }
+  ],
+  "selected_movers": null,
+  "linked_ids": false,
+  "python": "3.12.14",
+  "numpy": "2.3.5",
+  "pandas": "2.2.3",
+  "confidence": "heuristic; uncalibrated",
+  "scipy": "1.17.0",
+  "code_hashes": {
+    "analyze.py": "32087906f99de3ff91980c509c1211cbe5f4116bfd27021fb8a5eb3be114a1c2",
+    "grid.py": "c4debb5817abdc59ae698f10dd4791cb97de90b5a98cd0335a2060ecf1910886"
+  },
+  "acceptance": {
+    "minimum_days": 2,
+    "minimum_score": 70,
+    "minimum_typical_episode_quality": 0.4
+  },
+  "scope": "Local, isotropic Gaussian baseline; no relationship probability"
+}

@@ -1,0 +1,70 @@
+{
+  "seed_formula": "domain 10/20/30 + severe*100 + holdout*4000",
+  "contracts": {
+    "animals": {
+      "speed": 2,
+      "dt": 30,
+      "window": 480,
+      "radius": 180,
+      "vertical": null
+    },
+    "boats": {
+      "speed": 7,
+      "dt": 15,
+      "window": 240,
+      "radius": 220,
+      "vertical": null
+    },
+    "aircraft": {
+      "speed": 100,
+      "dt": 5,
+      "window": 240,
+      "radius": 350,
+      "vertical": 150
+    }
+  },
+  "error_design": {
+    "moderate": {
+      "sigma_m": 8,
+      "dropout": 0.05,
+      "outlier_probability": 0.005
+    },
+    "severe": {
+      "sigma_m": 30,
+      "dropout": 0.3,
+      "outlier_probability": 0.04,
+      "blackout_seconds": 300
+    }
+  },
+  "holdout": "different region, entity identifiers and observation noise; same scenario family, not external validation",
+  "all_passed": true,
+  "hashes": {
+    "initial_fit_metrics.csv": "353738d1060b535f6a6fa29e0b94fc4c266dc73369faaa126cfaa5416f55b82b",
+    "invalid_altitude_datum.csv": "a99285ec17d44d3995b3b2522219b5d321b449560ed6db854f9d99c40154d635",
+    "fit_metrics.csv": "e4f8f89e3b04f0126f9c285bae35a20051649a25322650cef7caa88de0711bf8",
+    "third_fit_metrics.csv": "967eb812837bae0a25474287a5d21293be7f4cd97d77bd5e0cb7a9c4cda59be8",
+    "boats_severe_development.csv": "6402e5660a215158b616b19ee2c3d7f0c8f0903962c5c07c6ff8e637d7288e18",
+    "boats_moderate_development.csv": "4de8f10ec8ce8e3d8346a9e3ff9f37bc7165186165a3bb7165c494983bc82284",
+    "boats_severe_holdout.csv": "148c7c08a4a7648f7b4b8ee13344f970cc2b48aff5da4e2456830ec98a2a0686",
+    "invalid_v_sigma_m.csv": "eb11b9b9e0edc4fec19162b47dcbcaaae348e8ba76af949e7d1939700c4ac1bb",
+    "aircraft_severe_holdout.csv": "b121ca761dc85a274c9c6e7ee0369878ad3c850c9f0949ccc3f0fdeccc1b1c7a",
+    "animals_severe_holdout.csv": "29e5461f65f9308b467effb8fc36237e55b5b0b37a7815f320512433b8648a3d",
+    "aircraft_moderate_development.csv": "86bc4e40b76d567e5d7525f28c28117070c5304eab9b5db070461b8aba4e5363",
+    "aircraft_moderate_holdout.csv": "7537ab39d3c08d9d8e4001bed5dd668e98bb5f5668ee0bc4b1a6cd7bc65f6ea1",
+    "aircraft_unsupported.csv": "ccc4411bdc832c01eb0ad216f22de5869477ceaa76dfaa5a03ec65c23eb19c0f",
+    "animals_severe_development.csv": "fa3f6f2b025bd0ab708e9edf3fb9be10c8e6fb0d2556cf0988b229ea62bd05ea",
+    "boats_moderate_holdout.csv": "606116a24736e3d8f17a2cb0da5b0f8f00289c24686d423cbb36b622f8910649",
+    "run.py": "a3db47e87f96c74bb6c410fa2ba9041d3d4b6d08d2cdf1a5472141cdcc323427",
+    "animals_moderate_holdout.csv": "171e9c1f6e27c0acd33dd89fd2f23d619c3da83e81a71f3971d19bde6bdee00e",
+    "aggregate.csv": "68286d920139255d2d32099c13988c4d68b414fc018607afa99d405bec7aeae0",
+    "animals_moderate_development.csv": "cdacf28fb830b10b7d5ca85c4caf3b9221b79f7c8dd0fbbd8b99361dd9e50773",
+    "animals_sparse.csv": "4a818ad67b82b09bba419234cdba02ea8869edeac8388e847e3c300c31d6936e",
+    "second_fit_metrics.csv": "c91fdb12de9f8a749107d91ec1d5fe09e38ffd76e7962093395a8a86dd395ac6",
+    "aircraft_severe_development.csv": "04333d9383c32aa71131f7bf94a52ce5bf382c0dd71e2f00fb25cccaa4684908",
+    "invalid_h_sigma_m.csv": "b7887bac96c78275a238caec6940035df3cd312b03c3e17d50c3b0d6b7c48e76",
+    "invalid_time_basis.csv": "25b2039f8c3801e73ad70501f11327b11efaec815ab20b8d4708afdeb4b3532b",
+    "invalid_calibration.csv": "c65acf9f63bd75de17aa4c6c5f64d5822500907a971a51f665e437baf52b6831",
+    "boats_unsupported.csv": "eb2ce26e5b78aef2e84362c021b600133401f4de4afa96b8eb2752a1eadd49f5",
+    "matches.csv": "596827bf6b1e1be2e3c376ee9fbfd461a4195c809194b39bb8928013a4c844d6"
+  }
+}
