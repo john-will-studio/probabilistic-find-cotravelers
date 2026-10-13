@@ -251,6 +251,14 @@ def test_walking_pace_companions_need_stricter_still_threshold():
     assert travel(1.3)<travel(0.4),(travel(1.3),travel(0.4))
     assert travel(0.4)>30,travel(0.4)
 
+def test_median_separation_reports_how_close_a_pair_travels():
+    _,p,_=run(world(days=3,n_bg=15,companion_offset_m=10.))
+    r=p[((p.mover_a=='companion')&(p.mover_b=='focal'))|((p.mover_a=='focal')&(p.mover_b=='companion'))].iloc[0]
+    assert 3<r.median_separation_m<40,r.median_separation_m   # planted at 10 m with 3 m noise
+    _,p2,_=run(world(days=3,n_bg=15,companion_offset_m=60.),radius=150)
+    r2=p2[((p2.mover_a=='companion')&(p2.mover_b=='focal'))|((p2.mover_a=='focal')&(p2.mover_b=='companion'))].iloc[0]
+    assert r2.median_separation_m>r.median_separation_m+25,(r.median_separation_m,r2.median_separation_m)
+
 if __name__=='__main__':
     failed=0
     for name,fn in sorted(globals().items()):

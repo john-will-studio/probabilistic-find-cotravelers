@@ -34,3 +34,16 @@ jobs:
       # Real Windows machine, spawn start method: peak memory of the whole sweep against the 12.8 GB budget that
       # a 32 GB machine gets by default (the runner itself has less RAM than that).
       - run: python tests/memory_check.py 12.8
+  scale-windows:
+    runs-on: windows-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          allow-prereleases: true
+      - run: python -m pip install -r requirements.txt
+      # 3 million rows on a Windows machine with half the RAM of the target: focal analysis and focal sweep, peak memory of
+      # all processes against the 12.8 GB budget a 32 GB machine gets by default.
+      - run: python tests/scale_check.py 3000000 12.8

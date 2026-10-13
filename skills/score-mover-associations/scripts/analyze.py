@@ -224,8 +224,8 @@ def encounter_windows(w,model='C',radius=100,crowd_radius=400,movers=None,window
                 # Only a separation clearly beyond the radius (given its uncertainty) counts against the pair.
                 pe=ncx2.cdf(radius*radius/vt,2,sep2/vt)
                 pn=np.where(moving&(sep2>(radius+2*np.sqrt(vt))**2),np.minimum(pn,pe),pn)
-        keep=pn>=.015
-        IA,IB,start,end,pn,moving=IA[keep],IB[keep],start[keep],end[keep],pn[keep],moving[keep]
+        keep=pn>=.015;sepw=np.hypot(d0x,d0y)
+        IA,IB,start,end,pn,moving,sepw=IA[keep],IB[keep],start[keep],end[keep],pn[keep],moving[keep],sepw[keep]
         if not len(IA):continue
         kinds=np.full(len(IA),'proximity' if model=='A' else 'indeterminate',dtype=object)
         if model!='A':
@@ -247,7 +247,7 @@ def encounter_windows(w,model='C',radius=100,crowd_radius=400,movers=None,window
         for k in range(len(IA)):
             ia,ib=IA[k],IB[k]
             results.append({'mover_a':ids[ia],'mover_b':ids[ib],'block':int(block),
-                'event_type':kinds[k],'start':start[k],'end':end[k],'q':float(q[k]),'p_near':float(pn[k]),'crowd':int(crowd[k]),
+                'event_type':kinds[k],'start':start[k],'end':end[k],'q':float(q[k]),'p_near':float(pn[k]),'sep':float(sepw[k]),'crowd':int(crowd[k]),
                 'x':mid[k,0],'y':mid[k,1],'sigma':float(sig[k]),
                 'n_a':int(NN[ia]),'n_b':int(NN[ib]),'source_a':SRC[ia],'source_b':SRC[ib]})
     return results
@@ -397,8 +397,10 @@ def sparse_encounters(d,radius=100,dt_max=60,crowd_radius=400,bias_floor=30,move
     o=np.lexsort((-q,kc,blk,cb,ca));a,b,blk,q,pn,crowd,mid,ca,cb,kc=(v[o] for v in (a,b,blk,q,pn,crowd,mid,ca,cb,kc))
     first=np.ones(len(a),bool);first[1:]=(ca[1:]!=ca[:-1])|(cb[1:]!=cb[:-1])|(blk[1:]!=blk[:-1])|(kc[1:]!=kc[:-1])
     kind_name=('sparse_colocation','sparse_travel','sparse_dwell')
+    def sep_of(i,j):
+        tm=(t[i]+t[j])/2;return float(np.hypot((x[i]+vx[i]*(tm-t[i]))-(x[j]+vx[j]*(tm-t[j])),(y[i]+vy[i]*(tm-t[i]))-(y[j]+vy[j]*(tm-t[j]))))
     return [{'mover_a':ids[i],'mover_b':ids[j],'block':int(bk),'event_type':kind_name[int(kk)],
-             'start':float(min(t[i],t[j])),'end':float(max(t[i],t[j])),'q':float(qq),'p_near':float(pp),'crowd':int(cr),
+             'start':float(min(t[i],t[j])),'end':float(max(t[i],t[j])),'q':float(qq),'p_near':float(pp),'sep':sep_of(i,j),'crowd':int(cr),
              'x':float(m[0]),'y':float(m[1]),'sigma':float(np.hypot(sig[i],sig[j])),'n_a':1,'n_b':1,
              'source_a':src[i],'source_b':src[j]}
             for i,j,bk,qq,pp,cr,m,kk in zip(a[first],b[first],blk[first],q[first],pn[first],crowd[first],mid[first],kc[first])]
@@ -409,7 +411,7 @@ def events(rows,origin,model):
     A,B,K=d.mover_a.values,d.mover_b.values,d.event_type.values;blk=d.block.values
     new=np.ones(len(d),bool);new[1:]=(A[1:]!=A[:-1])|(B[1:]!=B[:-1])|(K[1:]!=K[:-1])|(np.diff(blk)!=1)
     starts=np.flatnonzero(new);ends=np.r_[starts[1:],len(d)]
-    S,E,X,Y,Q,P,CR=(d[c].values for c in ['start','end','x','y','q','p_near','crowd'])
+    S,E,X,Y,Q,P,CR=(d[c].values for c in ['start','end','x','y','q','p_near','crowd']);SEP=d.sep.values
     SIG,NA,NB=d.sigma.values,d.n_a.values,d.n_b.values;SA,SB=d.source_a.values,d.source_b.values
     kx=111320*np.cos(np.deg2rad(origin[1]));out=[]
     for i,j in zip(starts,ends):
@@ -435,7 +437,7 @@ def events(rows,origin,model):
           'mgrs':mgrs(lat,lon),'mgrs_precision_m':100,'location_pair_sigma_m':float(SIG[i:j].max()),
           'observations_a':int(NA[i:j].sum()),'observations_b':int(NB[i:j].sum()),
           'quality':quality,'event_confidence_score':round(100*quality,2),
-          'mean_proximity_probability':float(P[i:j].mean()),'background_other_movers':int(CR[i:j].max()),
+          'median_separation_m':float(np.median(SEP[i:j])),'mean_proximity_probability':float(P[i:j].mean()),'background_other_movers':int(CR[i:j].max()),
           'confidence_kind':'heuristic_evidence','calibration_status':'uncalibrated',
           'null_p_value':None,'null_q_value':None,'model':model,'version':VERSION,
           'limitations':'Sampled window evidence; continuous occupation and interaction unconfirmed'})
@@ -446,6 +448,9 @@ def _evidence(h):
     daily=h.assign(day=h.start_utc.str[:10]).groupby(['day','event_type']).quality.max()
     typicalq=float(daily.median()) if len(daily) else 0.
     return 100*(-np.expm1(-float(daily.sum())))*min(1,typicalq/.45),typicalq
+
+def _sep(h):
+    return round(float(h.median_separation_m.median()),1) if len(h) and 'median_separation_m' in h else None
 
 def pair_scores(e,min_days=2):
     """Per pair: `confidence_score` (all co-location evidence) and `travel_confidence_score` (journey evidence only:
@@ -458,6 +463,7 @@ def pair_scores(e,min_days=2):
         days=h.start_utc.str[:10].nunique();score,typicalq=_evidence(h)
         ht=h[~h.event_type.isin(DWELL_KINDS)];tscore,ttyp=_evidence(ht) if len(ht) else (0.,0.)
         out.append({'mover_a':a,'mover_b':b,'confidence_score':round(score,2),'travel_confidence_score':round(tscore,2),'independent_episodes':len(h),
+                    'median_separation_m':_sep(h),'travel_median_separation_m':_sep(ht),
                     'days':days,'travel_days':int(ht.start_utc.str[:10].nunique()),'typical_episode_quality':round(typicalq,4),
                     'co_travel_episodes':int((h.event_type=='co_travel').sum()),'co_dwell_episodes':int((h.event_type=='co_dwell').sum()),
                     'proximity_episodes':int((h.event_type=='proximity').sum()),'sparse_episodes':int(h.event_type.isin(SPARSE_KINDS).sum()),
