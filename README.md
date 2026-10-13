@@ -4,7 +4,7 @@ A reusable agent skill, a local 2D co-traveler analysis baseline, and reproducib
 
 ## Start here
 
-Use Python 3.12 (the tested runtime). From this repository root:
+Tested on Python 3.12 (pandas 2.2) and Python 3.14 (pandas 3). From this repository root:
 
 ```bash
 python -m venv .venv
@@ -15,9 +15,9 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-Dependency versions match the environment used for the supplied results.
+Run `python tests/test_regressions.py` to check the install (12 regression tests covering the defects found in independent audits).
 
-## Analyze your own local 2D CSV
+## Analyze your own CSV
 
 ```bash
 python skills/score-mover-associations/scripts/analyze.py input.csv --out outputs/my-analysis --model C --radius 150
@@ -29,9 +29,27 @@ Multiple datasets can be supplied before `--out`. Required columns:
 mover_id,timestamp,longitude,latitude,error_radius_m,error_probability
 ```
 
-Use WGS84 decimal degrees, timezone-qualified timestamps and metres. `error_probability` is the declared probability enclosed by `error_radius_m` under the documented circular Gaussian error assumption. Do not interpret a quality flag as a probability. Read `skills/score-mover-associations/references/method.md` before using the baseline. Inputs spanning more than one degree are refused. Use `--help` for options; optional focal IDs do not remove background movers.
+Use WGS84 decimal degrees and metres. Timestamps need a UTC offset, or pass `--assume-tz UTC` (any IANA zone) for naive ones. `error_probability` is the declared probability enclosed by `error_radius_m` under a circular Gaussian error assumption; if the source gives no accuracy, state an assumption explicitly and say so in the report. Read `skills/score-mover-associations/references/method.md` before relying on results. Confidence scores are uncalibrated evidence scores, not probabilities of interaction.
 
-Outputs include matches, review candidates, pair scores, profiles, quarantined records and a reproducibility manifest. Confidence scores are uncalibrated evidence scores, not probabilities of interaction. Pair acceptance requires evidence on at least two days. MGRS precision is not positional accuracy.
+## Adapt an arbitrary file
+
+```bash
+python skills/score-mover-associations/scripts/adapt.py raw.csv --out data.csv --id MMSI --time BaseDateTime --lon LON --lat LAT --assume-tz UTC --error-m 15
+```
+
+`adapt.py` streams any CSV, keeps rows by an optional `--where` query and `--id-regex`, and writes an `.adapt.json` sidecar recording the accuracy assumption.
+
+## Find an unknown companion of a known object (sweep + null)
+
+No single parameter setting suits every dataset, so `sweep.py` runs a grid of scenarios in parallel (match radius, time tolerance, window length, crowd model, optional follower lag), repeats it on time-shifted null copies of the data, and reports which pairs are more synchronous than independent movers with the same habits, with scenario-corrected p-values and Benjamini-Hochberg q:
+
+```bash
+python skills/score-mover-associations/scripts/sweep.py data.csv --out outputs/sweep --movers KNOWN_ID --lags 0 120 --replicates 20
+```
+
+Outputs `sweep_pairs.csv` (ranked pairs, best radius, `min_radius_m_score70`, `null_q`, `significant`), `sweep_scenario_scores.csv`, `sweep_grid.json` and `sweep_summary.json` (with advice when nothing is significant). Override the grid with `--grid-json`.
+
+What it handles: sparse and bursty cadence (point-pair evidence), dense tracks (motion windows, with overtaking rejected), datasets spanning many regions, wide coastlines/corridors (tiled with overlap) or containing stray coordinates (partitioned, not aborted), the antimeridian, sub-second to nanosecond timestamp precision, focal searches in 100k+ mover populations. What it does not: calibrated interaction probabilities, elliptical or 3D errors, polar data, or relationships that leave no co-location signal.
 
 ## Reproduce domain smoke tests
 
@@ -57,12 +75,9 @@ The final phase reads the included `benchmark/results/frozen_config.json`. Comma
 - `skills/score-mover-associations/`: SKILL.md, agent metadata, domain/method guidance, analyze.py and required grid.py.
 - `domain-smoke/`: generator/detector/test runner, synthetic CSVs, truth, metrics, profiles, hashes, reports and failed-iteration metrics.
 - `benchmark/`: original local 2D fixture generator, fit runner, audit script, a dataset generator and historical/final results. Run generate.py to recreate the baseline datasets; domain synthetic datasets are included.
-- `docs/`: original benchmark report.
+- `docs/`: original benchmark report and `docs/audit-2026-10.md`, the independent audit and real-data study behind the current code.
+- `tests/`: regression tests.
 
 ## Scope
 
-The nearby-corridor/co-resident scenario with one or two encounters elsewhere has not been implemented or validated. Raw AIS/ADS-B adapters, deployment resolution, calibrated interaction probabilities, inferential nulls and polar MGRS are not provided. The domain harness accepts only its documented synthetic input semantics. Synthetic fixture times and locations do not identify real tracked subjects. Co-presence does not establish interaction, intent or criminal association.
-
-## Upload to GitHub
-
-Extract the ZIP and upload the contents of `mover-association-analysis/` into the repository root, preserving subfolders. Upload the extracted files, rather than only the ZIP, so GitHub can display the code. No credentials, repository history or Python caches are included. The agent skill folder can also be copied separately; installation depends on the host application.
+The nearby-corridor/co-resident scenario with one or two encounters elsewhere has not been implemented or validated. Raw AIS/ADS-B adapters, deployment resolution, calibrated interaction probabilities and polar MGRS are not provided; `sweep.py` supplies a time-shift null (habit-preserving, not an interaction model). The domain harness accepts only its documented synthetic input semantics. Synthetic fixture times and locations do not identify real tracked subjects. Co-presence does not establish interaction, intent or criminal association.

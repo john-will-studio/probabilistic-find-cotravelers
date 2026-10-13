@@ -119,6 +119,35 @@ def test_sweep_null_runs():
     grid=sweep.suggest_grid(d,prof);assert grid and all('radius' in g for g in grid)
     s=sweep.shift_null(d,np.random.default_rng(0),86400);assert len(s)==len(d)
 
+def test_wide_extent_is_tiled_not_skipped():
+    # A convoy sailing ~3 degrees east is one connected region far wider than a local tangent plane.
+    rng=np.random.default_rng(9);parts=[]
+    for d in range(2):
+        day=f'2026-03-{10+d:02d}T00:00:00'
+        parts.append(track('focal',day,300,120,-92.0,28.5,25,0,rng=rng,sigma=5))
+        parts.append(track('companion',day,300,120,-92.0,28.5+30/M_PER_DEG,25,0,rng=rng,sigma=5))
+        for b in range(10):parts.append(track(f'bg{b}',day,300,120,-92.0,28.0+0.05*b,20,0,rng=rng,sigma=5))
+    df=pd.concat(parts,ignore_index=True)
+    e,p,prof=run(df,movers=['focal'])
+    assert any(r.get('tiled') for r in prof['regions'].values()),prof['regions']
+    assert found(p),p.head()
+
+def test_sweep_flags_planted_companion_significant():
+    import subprocess
+    df=world(days=8,n_bg=40);out=Path(tempfile.mkdtemp())
+    r=subprocess.run([sys.executable,str(ROOT/'skills/score-mover-associations/scripts/sweep.py'),str(_csv(df)),'--out',str(out),
+                      '--movers','focal','--workers','4'],capture_output=True,text=True);assert r.returncode==0,r.stderr[-500:]
+    p=pd.read_csv(out/'sweep_pairs.csv');top=p.iloc[0]
+    assert {top.mover_a,top.mover_b}=={'focal','companion'} and bool(top.significant),p.head()
+
+def test_adapter_maps_columns_and_requires_tz():
+    import subprocess
+    raw=pd.DataFrame({'id':['a','a','b'],'ts':['2026-01-01 00:00:00']*3,'x':[10.,10.,10.],'y':[5.,5.,5.]});f=Path(tempfile.mkdtemp())/'raw.csv';raw.to_csv(f,index=False)
+    base=[sys.executable,str(ROOT/'skills/score-mover-associations/scripts/adapt.py'),str(f),'--id','id','--time','ts','--lon','x','--lat','y','--error-m','20']
+    r=subprocess.run(base+['--out',str(f.parent/'o.csv')],capture_output=True,text=True);assert r.returncode!=0 and 'assume-tz' in (r.stderr+r.stdout)
+    r=subprocess.run(base+['--assume-tz','UTC','--out',str(f.parent/'o.csv')],capture_output=True,text=True);assert r.returncode==0,r.stderr
+    o=pd.read_csv(f.parent/'o.csv');assert list(o.columns)==analyze.REQUIRED and len(o)==3 and o.timestamp.str.endswith('Z').all()
+
 if __name__=='__main__':
     failed=0
     for name,fn in sorted(globals().items()):

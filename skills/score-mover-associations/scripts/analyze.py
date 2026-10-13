@@ -22,7 +22,7 @@ def quantiles(values):
     return dict(zip(['p10','p50','p90','p99'],map(float,np.quantile(a,[.1,.5,.9,.99])))) if len(a) else {}
 
 
-REGION_CELL_DEG=0.1;MAX_REGION_SPAN_DEG=1.0
+REGION_CELL_DEG=0.1;MAX_REGION_SPAN_DEG=1.0;TILE_DEG=0.5;TILE_MARGIN_DEG=0.1
 
 def wrap_lon(x):
     return (x+180)%360-180
@@ -55,7 +55,7 @@ def region_summary(d):
         dlon=wrap_lon(g.longitude-circular_mean_lon(g.longitude))
         span=[float(dlon.max()-dlon.min()),float(g.latitude.max()-g.latitude.min())]
         out[int(rid)]={'rows':len(g),'movers':int(g.mover_id.nunique()),'span_deg':span,
-                       'analyzable':bool(max(span)<=MAX_REGION_SPAN_DEG)}
+                       'analyzable':True,'tiled':bool(max(span)>MAX_REGION_SPAN_DEG)}
     return out
 
 def load(paths,link_ids=False,assume_tz=None):
@@ -317,6 +317,25 @@ def pair_scores(e):
                     'confidence_kind':'heuristic_evidence','calibration_status':'uncalibrated'})
     return pd.DataFrame(out).sort_values(['confidence_score','mover_a','mover_b'],ascending=[False,True,True])
 
+
+def tiles(g,origin):
+    """Overlapping tiles for a region too wide for one local tangent plane. Each tile carries a margin so pairs
+    straddling a boundary are seen whole in at least one tile; each tile gets its own projection."""
+    dlon=wrap_lon(g.longitude.values-origin[0]);lat=g.latitude.values
+    ti=np.floor(dlon/TILE_DEG).astype(int);tj=np.floor(lat/TILE_DEG).astype(int);parts={}
+    for dx in (-1,0,1):
+        for dy in (-1,0,1):
+            ci,cj=ti+dx,tj+dy
+            inside=((dlon>=ci*TILE_DEG-TILE_MARGIN_DEG)&(dlon<(ci+1)*TILE_DEG+TILE_MARGIN_DEG)&
+                    (lat>=cj*TILE_DEG-TILE_MARGIN_DEG)&(lat<(cj+1)*TILE_DEG+TILE_MARGIN_DEG))
+            for key in set(zip(ci[inside].tolist(),cj[inside].tolist())):
+                m=inside&(ci==key[0])&(cj==key[1]);parts.setdefault(key,[]).append(np.flatnonzero(m))
+    for key,idx in sorted(parts.items()):
+        h=g.iloc[np.unique(np.concatenate(idx))].copy()
+        lon0,lat0=circular_mean_lon(h.longitude),float(h.latitude.mean())
+        h['x']=wrap_lon(h.longitude-lon0)*111320*np.cos(np.deg2rad(lat0));h['y']=(h.latitude-lat0)*111320
+        yield key,h,[lon0,lat0]
+
 def resolve_movers(d,movers):
     """Accept namespaced or original IDs for focal selection; fail loudly on IDs that match nothing."""
     if not movers:return None
@@ -329,24 +348,38 @@ def resolve_movers(d,movers):
     if missing:raise ValueError(f'focal movers not found in data: {missing}')
     return out
 
-def analyze_data(d,profile,model='C',movers=None,radius=100,bias_floor=30,crowd_radius=400,gap_s=600,sparse_s=60,window_s=900,lag_s=0):
-    """Score pairs on already-loaded data; reusable by parameter sweeps and null controls."""
+def analyze_data(d,profile,model='C',movers=None,radius=100,bias_floor=30,crowd_radius=400,gap_s=600,sparse_s=60,window_s=900,lag_s=0,cache=None):
+    """Score pairs on already-loaded data; reusable by parameter sweeps and null controls.
+    `cache` (a dict) lets scenarios that share window settings reuse the expensive motion fits."""
     ws=[];es=[]
-    for rid,g in d.groupby('region'):
-        if not profile['regions'][int(rid)]['analyzable']:continue
+    def one(g,rid,origin,tile):
         if lag_s:
             # Follower search: shift the focal movers' clocks so a companion trailing by lag_s lines up with them.
             if not movers:raise ValueError('lag_s requires focal movers')
             g=g.copy();g.loc[g.mover_id.isin(movers),'seconds']+=lag_s
-        wr=windows(g,bias_floor=bias_floor,window_s=window_s,gap_s=gap_s);wr['region']=int(rid);ws.append(wr)
+        key=(int(rid),tile,bias_floor,window_s,gap_s,lag_s)
+        if cache is not None and key in cache:wr=cache[key]
+        else:
+            wr=windows(g,bias_floor=bias_floor,window_s=window_s,gap_s=gap_s);wr['region']=int(rid)
+            if cache is not None:cache[key]=wr
+        ws.append(wr)
         rows=encounter_windows(wr,model,radius,crowd_radius,movers,window_s)
         if sparse_s and model!='A':
             known=frozenset(zip(wr.mover_id[wr.state!='unknown'],wr.block[wr.state!='unknown'].astype(int)))
             rows+=sparse_encounters(g,radius,sparse_s,crowd_radius,bias_floor,movers,known,window_s)
-        er=events(rows,profile['origins'][int(rid)],model)
+        er=events(rows,origin,model)
         if len(er):es.append(er.assign(region=int(rid),lag_seconds=lag_s))
+    for rid,g in d.groupby('region'):
+        if not profile['regions'][int(rid)]['analyzable']:continue
+        origin=profile['origins'][int(rid)]
+        if profile['regions'][int(rid)].get('tiled'):
+            for tile,h,o in tiles(g,origin):
+                if movers and not h.mover_id.isin(movers).any():continue
+                one(h,rid,o,tile)
+        else:one(g,rid,origin,None)
     w=pd.concat(ws,ignore_index=True) if ws else pd.DataFrame()
     e=pd.concat(es,ignore_index=True) if es else pd.DataFrame()
+    if len(e):e=e.drop_duplicates(['mover_a','mover_b','event_type','start_utc','end_utc']).reset_index(drop=True)  # tile overlaps
     return e,pair_scores(e),w
 
 def run(paths,out,model='C',movers=None,link_ids=False,radius=100,bias_floor=30,crowd_radius=400,gap_s=600,sparse_s=60,
