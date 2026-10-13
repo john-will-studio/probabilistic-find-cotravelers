@@ -265,7 +265,6 @@ def sparse_encounters(d,radius=100,dt_max=60,crowd_radius=400,bias_floor=30,move
     Memory is bounded: the data are processed in time slices whose candidate-pair count is capped, and crowd counts run
     in small batches, so dense data or generous tolerances cost time, never unbounded memory."""
     if len(d)<2:return []
-    c=radius/dt_max
     sig_all=np.sqrt(d.sigma.values**2+bias_floor**2)
     # A fix whose combined sigma exceeds ~5.7x the radius can never reach p>=.015; excluding it keeps one wildly
     # uncertain fix from inflating the search radius for everyone.
@@ -273,31 +272,38 @@ def sparse_encounters(d,radius=100,dt_max=60,crowd_radius=400,bias_floor=30,move
     if len(elig)<2:return []
     d=d.iloc[elig];order=np.argsort(d.seconds.values,kind='stable');d=d.iloc[order];sig=sig_all[elig][order]
     t=d.seconds.values;x=d.x.values;y=d.y.values;ids=d.mover_id.to_numpy(dtype=object);src=d.source_id.to_numpy(dtype=object)
+    reach=radius*1.5+5.3*float(sig.max())
+    # Time is scaled so dt_max equals the spatial reach: the search ball (radius sqrt(2)*reach) then hugs the needed
+    # cylinder (spatial reach x +-dt_max) instead of reaching several times further in time than the tolerance.
+    c=reach/dt_max;ball=1.4143*reach
     codes,_=pd.factorize(ids);n=len(t);pts=np.c_[x,y,t*c]
     cov=pd.MultiIndex.from_arrays([ids,(t//window_s).astype(np.int64)]).isin(known) if known else np.zeros(n,bool)
     isfocal=np.isin(ids,list(movers)) if movers else None
-    reach=radius*1.5+5.3*float(sig.max());margin=max(dt_max,crowd_radius/c)
+    # Crowd = other movers within crowd_radius and +-half a window of the pair, whatever the matching tolerance is
+    # (coupling it to dt_max would stretch the crowd window with a looser tolerance).
+    cc=crowd_radius/(window_s/2.);cpts=np.c_[x,y,t*cc]
+    margin=max(dt_max,window_s/2.)
     # Candidate-pair density from a sample inside a contiguous middle slice, to size the time slices.
     mid_lo=max(0,n//2-250_000);sub=cKDTree(pts[mid_lo:mid_lo+500_000])
     sample=np.random.default_rng(0).choice(len(sub.data),size=min(len(sub.data),2000),replace=False)
-    deg=float(np.mean(sub.query_ball_point(sub.data[sample],reach,return_length=True)));del sub
+    deg=float(np.mean(sub.query_ball_point(sub.data[sample],ball,return_length=True)));del sub
     chunk=int(np.clip(SPARSE_CHUNK_PAIRS*2/max(deg,1.),2000,n))
     keep_a=[];keep_b=[];keep_blk=[];keep_q=[];keep_p=[];keep_crowd=[];keep_mid=[]
     for i0 in range(0,n,chunk):
         i1=min(n,i0+chunk);lo=int(np.searchsorted(t,t[i0]-margin,'left'));hi=int(np.searchsorted(t,t[i1-1]+margin,'right'))
-        tree=cKDTree(pts[lo:hi])
+        tree=cKDTree(pts[lo:hi]);ctree=cKDTree(cpts[lo:hi])
         if movers:
             fidx=np.flatnonzero(isfocal[i0:i1])+i0;aa=[];bb=[]
             for k in range(0,len(fidx),2000):
                 batch=fidx[k:k+2000]
-                for i,js in zip(batch,tree.query_ball_point(pts[batch],reach)):
+                for i,js in zip(batch,tree.query_ball_point(pts[batch],ball)):
                     js=np.asarray(js,dtype=np.int64)+lo
                     m=(ids[js]!=ids[i])&(np.abs(t[js]-t[i])<=dt_max)&~(isfocal[js]&(js<i))&~(cov[js]&cov[i])
                     if m.any():aa.append(np.full(int(m.sum()),i));bb.append(js[m])
             if not aa:continue
             a=np.concatenate(aa);b=np.concatenate(bb)
         else:
-            pr=tree.query_pairs(reach,output_type='ndarray')
+            pr=tree.query_pairs(ball,output_type='ndarray')
             if not len(pr):continue
             a=pr[:,0]+lo;b=pr[:,1]+lo;core=(a>=i0)&(a<i1);a,b=a[core],b[core]   # earlier point decides ownership
             m=(ids[a]!=ids[b])&(np.abs(t[a]-t[b])<=dt_max)&~(cov[a]&cov[b]);a,b=a[m],b[m]
@@ -318,11 +324,11 @@ def sparse_encounters(d,radius=100,dt_max=60,crowd_radius=400,bias_floor=30,move
             nk=np.ones(len(a),bool);nk[1:]=(ca[1:]!=ca[:-1])|(cb[1:]!=cb[:-1])|(blk[1:]!=blk[:-1])
             rk=np.arange(len(a))-np.maximum.accumulate(np.where(nk,np.arange(len(a)),0));sel=rk<3
             a,b,pn,blk,ca,cb=a[sel],b[sel],pn[sel],blk[sel],ca[sel],cb[sel]
-        mid=np.c_[(x[a]+x[b])/2,(y[a]+y[b])/2,(t[a]+t[b])/2*c]
+        mid=np.c_[(x[a]+x[b])/2,(y[a]+y[b])/2,(t[a]+t[b])/2*cc]
         crowd=np.empty(len(a),dtype=np.int64);lc=codes[lo:hi]
         for k in range(0,len(a),SPARSE_CROWD_BATCH):
             sl=slice(k,k+SPARSE_CROWD_BATCH)
-            for j,(nb,u,v) in enumerate(zip(tree.query_ball_point(mid[sl],crowd_radius),ca[sl],cb[sl])):
+            for j,(nb,u,v) in enumerate(zip(ctree.query_ball_point(mid[sl],crowd_radius),ca[sl],cb[sl])):
                 un=np.unique(lc[nb]);crowd[k+j]=un.size-int((un==u).any())-int((un==v).any())
         q=pn/(1+crowd)
         o=np.lexsort((-q,blk,cb,ca));a,b,pn,blk,ca,cb,q,crowd,mid=(v[o] for v in (a,b,pn,blk,ca,cb,q,crowd,mid))
