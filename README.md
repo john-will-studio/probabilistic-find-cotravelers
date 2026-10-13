@@ -61,6 +61,14 @@ Designed to stay inside a 32 GB machine, Windows included (CI runs the test suit
 - Sparse co-location matching works in time slices with a capped pair count and batched crowd counts, so dense data or generous tolerances cost time, not memory. Input files are read with only the needed columns and hashed in a stream.
 - Rough guide: 1M rows analyse in about 1 GB; a population sweep holds the data once per worker. For several million rows use `--movers` (focal mode), `--workers 2`, or crop the region or period first (`adapt.py --where`).
 - Run one heavy job at a time.
+- **Check it on your own machine** (this is the direct 32 GB measurement; CI could only provide 16 GB Windows runners). From the repository root, with the environment from `requirements.txt` active:
+
+  ```powershell
+  python tests/memory_check.py 12.8          # full default sweep on a generated 181k-row fixture
+  python tests/scale_check.py 3000000 12.8   # 3 million rows: focal analysis + focal sweep
+  ```
+
+  Each prints the platform, RAM, peak memory of all worker processes, wall time and whether the planted companion was found, and exits non-zero if the peak exceeds 1.25 x the budget (12.8 GB = the default budget on a 32 GB machine). Use `--max-memory-gb` on `sweep.py` to set a lower budget.
 
 ## Reproduce domain smoke tests
 
